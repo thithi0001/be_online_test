@@ -1,0 +1,327 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model answer_banks {
+  answer_id               Int                       @id @default(autoincrement())
+  question_id             Int
+  is_correct              Boolean
+  m_content               String                    @db.Text
+  order_index             String                    @db.Char(1)
+  question_banks          question_banks            @relation(fields: [question_id], references: [question_id], onDelete: NoAction, onUpdate: NoAction, map: "answer_banks_ibfk_1")
+  student_attempt_answers student_attempt_answers[]
+
+  @@index([question_id], map: "question_id")
+}
+
+model class_invitations {
+  invit_id     Int                             @id @default(autoincrement())
+  class_id     Int
+  email        String                          @db.VarChar(255)
+  invited_by   Int
+  invit_status class_invitations_invit_status? @default(pending)
+  expire_at    DateTime?                       @db.Timestamp(0)
+  classes      classes                         @relation(fields: [class_id], references: [class_id], onDelete: NoAction, onUpdate: NoAction, map: "class_invitations_ibfk_1")
+  users        users                           @relation(fields: [invited_by], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "class_invitations_ibfk_2")
+
+  @@index([class_id], map: "class_id")
+  @@index([invited_by], map: "invited_by")
+}
+
+model classes {
+  class_id           Int                  @id @default(autoincrement())
+  teacher_id         Int
+  class_name         String               @db.VarChar(100)
+  class_invitations  class_invitations[]
+  users              users                @relation(fields: [teacher_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "classes_ibfk_1")
+  exam_session_class exam_session_class[]
+  student_class      student_class[]
+
+  @@index([teacher_id], map: "teacher_id")
+}
+
+model exam_session_class {
+  session_id    Int
+  class_id      Int
+  exam_sessions exam_sessions @relation(fields: [session_id], references: [session_id], onDelete: NoAction, onUpdate: NoAction, map: "exam_session_class_ibfk_1")
+  classes       classes       @relation(fields: [class_id], references: [class_id], onDelete: NoAction, onUpdate: NoAction, map: "exam_session_class_ibfk_2")
+
+  @@unique([session_id, class_id], map: "exam_session_class_index_10")
+  @@index([class_id], map: "class_id")
+}
+
+model exam_sessions {
+  session_id         Int                           @id @default(autoincrement())
+  template_id        Int
+  session_name       String                        @db.VarChar(150)
+  duration           Int?
+  shuffle_questions  Boolean?                      @default(true)
+  shuffle_answers    Boolean?                      @default(true)
+  auto_submit        Boolean?                      @default(true)
+  allow_review       Boolean?                      @default(false)
+  show_result        Boolean?                      @default(false)
+  start_time         DateTime                      @db.Timestamp(0)
+  end_time           DateTime                      @db.Timestamp(0)
+  attempt_limit      Int?                          @default(1)
+  session_password   String                        @db.VarChar(10)
+  session_status     exam_sessions_session_status? @default(draft)
+  created_by         Int
+  created_at         DateTime?                     @default(dbgenerated("(now())")) @db.Timestamp(0)
+  exam_session_class exam_session_class[]
+  exam_templates     exam_templates                @relation(fields: [template_id], references: [template_id], onDelete: NoAction, onUpdate: NoAction, map: "exam_sessions_ibfk_1")
+  users              users                         @relation(fields: [created_by], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "exam_sessions_ibfk_2")
+  retake_requests    retake_requests[]
+  student_attempts   student_attempts[]
+
+  @@index([created_by], map: "created_by")
+  @@index([template_id], map: "template_id")
+}
+
+model exam_template_questions {
+  template_id    Int
+  question_id    Int
+  score          Decimal?       @default(0.25) @db.Decimal(5, 2)
+  order_index    Int
+  exam_templates exam_templates @relation(fields: [template_id], references: [template_id], onDelete: NoAction, onUpdate: NoAction, map: "exam_template_questions_ibfk_1")
+  question_banks question_banks @relation(fields: [question_id], references: [question_id], onDelete: NoAction, onUpdate: NoAction, map: "exam_template_questions_ibfk_2")
+
+  @@unique([template_id, question_id], map: "exam_template_questions_index_5")
+  @@index([question_id], map: "question_id")
+}
+
+model exam_templates {
+  template_id             Int                       @id @default(autoincrement())
+  template_name           String                    @db.VarChar(150)
+  sub_id                  Int
+  created_by              Int
+  created_at              DateTime?                 @default(dbgenerated("(now())")) @db.Timestamp(0)
+  is_active               Boolean?                  @default(true)
+  exam_sessions           exam_sessions[]
+  exam_template_questions exam_template_questions[]
+  subjects                subjects                  @relation(fields: [sub_id], references: [sub_id], onDelete: NoAction, onUpdate: NoAction, map: "exam_templates_ibfk_1")
+  users                   users                     @relation(fields: [created_by], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "exam_templates_ibfk_2")
+
+  @@index([created_by], map: "created_by")
+  @@index([sub_id], map: "sub_id")
+}
+
+model noti_types {
+  type_id       Int             @id @default(autoincrement())
+  type_name     String          @db.Text
+  notifications notifications[]
+}
+
+model noti_users {
+  noti_id       Int
+  user_id       Int
+  is_read       Boolean?      @default(false)
+  notifications notifications @relation(fields: [noti_id], references: [noti_id], onDelete: NoAction, onUpdate: NoAction, map: "noti_users_ibfk_1")
+  users         users         @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "noti_users_ibfk_2")
+
+  @@unique([noti_id, user_id], map: "noti_users_index_1")
+  @@index([user_id], map: "noti_users_index_2")
+  @@index([user_id, is_read], map: "noti_users_index_3")
+}
+
+model notifications {
+  noti_id    Int          @id @default(autoincrement())
+  type_id    Int
+  m_content  String       @db.Text
+  created_by Int
+  created_at DateTime?    @default(dbgenerated("(now())")) @db.Timestamp(0)
+  noti_users noti_users[]
+  noti_types noti_types   @relation(fields: [type_id], references: [type_id], onDelete: NoAction, onUpdate: NoAction, map: "notifications_ibfk_2")
+  users      users        @relation(fields: [created_by], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "notifications_ibfk_1")
+
+  @@index([created_by], map: "created_by")
+  @@index([type_id], map: "type_id")
+}
+
+model proctoring_events {
+  event_id         Int                          @id @default(autoincrement())
+  attempt_id       Int
+  event_type       proctoring_events_event_type
+  event_time       DateTime?                    @default(dbgenerated("(now())")) @db.Timestamp(0)
+  metadata         Json?
+  student_attempts student_attempts             @relation(fields: [attempt_id], references: [attempt_id], onDelete: NoAction, onUpdate: NoAction, map: "proctoring_events_ibfk_1")
+
+  @@index([attempt_id], map: "attempt_id")
+}
+
+model question_banks {
+  question_id             Int                       @id @default(autoincrement())
+  sub_id                  Int
+  q_type                  question_banks_q_type
+  m_content               String                    @db.Text
+  difficulty              Int?                      @default(0)
+  created_by              Int
+  created_at              DateTime?                 @default(dbgenerated("(now())")) @db.Timestamp(0)
+  is_active               Boolean?                  @default(true)
+  answer_banks            answer_banks[]
+  exam_template_questions exam_template_questions[]
+  subjects                subjects                  @relation(fields: [sub_id], references: [sub_id], onDelete: NoAction, onUpdate: NoAction, map: "question_banks_ibfk_1")
+  users                   users                     @relation(fields: [created_by], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "question_banks_ibfk_2")
+
+  @@index([created_by], map: "created_by")
+  @@index([sub_id], map: "sub_id")
+}
+
+model retake_permissions {
+  permission_id                              Int             @id @default(autoincrement())
+  request_id                                 Int
+  available_from                             DateTime        @db.Timestamp(0)
+  available_to                               DateTime        @db.Timestamp(0)
+  max_attempt                                Int?            @default(2)
+  created_by                                 Int
+  created_at                                 DateTime?       @default(dbgenerated("(now())")) @db.Timestamp(0)
+  retake_requests                            retake_requests @relation(fields: [request_id], references: [request_id], onDelete: NoAction, onUpdate: NoAction, map: "retake_permissions_ibfk_4")
+  users_retake_permissions_created_byTousers users           @relation("retake_permissions_created_byTousers", fields: [created_by], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "retake_permissions_ibfk_3")
+
+  @@index([created_by], map: "created_by")
+  @@index([request_id], map: "request_id")
+}
+
+model retake_requests {
+  request_id         Int                             @id @default(autoincrement())
+  session_id         Int
+  student_id         Int
+  reason             String?                         @db.Text
+  request_status     retake_requests_request_status? @default(pending)
+  created_at         DateTime?                       @default(dbgenerated("(now())")) @db.Timestamp(0)
+  retake_permissions retake_permissions[]
+  exam_sessions      exam_sessions                   @relation(fields: [session_id], references: [session_id], onDelete: NoAction, onUpdate: NoAction, map: "retake_requests_ibfk_1")
+  users              users                           @relation(fields: [student_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "retake_requests_ibfk_2")
+
+  @@index([session_id], map: "session_id")
+  @@index([student_id], map: "student_id")
+}
+
+model student_attempt_answers {
+  attempt_id       Int
+  answer_id        Int
+  student_attempts student_attempts @relation(fields: [attempt_id], references: [attempt_id], onDelete: NoAction, onUpdate: NoAction, map: "student_attempt_answers_ibfk_1")
+  answer_banks     answer_banks     @relation(fields: [answer_id], references: [answer_id], onDelete: NoAction, onUpdate: NoAction, map: "student_attempt_answers_ibfk_2")
+
+  @@unique([attempt_id, answer_id], map: "student_attempt_answers_index_9")
+  @@index([answer_id], map: "answer_id")
+}
+
+model student_attempts {
+  attempt_id              Int                              @id @default(autoincrement())
+  student_id              Int
+  session_id              Int
+  ip_address              String?                          @db.VarChar(45)
+  device_info             Json?
+  attempt_status          student_attempts_attempt_status? @default(in_progress)
+  attempt_no              Int
+  is_retake               Boolean?                         @default(false)
+  start_time              DateTime?                        @default(dbgenerated("(now())")) @db.Timestamp(0)
+  submit_time             DateTime?                        @db.Timestamp(0)
+  total_score             Decimal?                         @default(0.00) @db.Decimal(5, 2)
+  proctoring_events       proctoring_events[]
+  student_attempt_answers student_attempt_answers[]
+  users                   users                            @relation(fields: [student_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "student_attempts_ibfk_1")
+  exam_sessions           exam_sessions                    @relation(fields: [session_id], references: [session_id], onDelete: NoAction, onUpdate: NoAction, map: "student_attempts_ibfk_2")
+
+  @@unique([student_id, attempt_no], map: "student_attempts_index_8")
+  @@index([session_id], map: "session_id")
+}
+
+model student_class {
+  student_id Int
+  class_id   Int
+  created_at DateTime? @default(dbgenerated("(now())")) @db.Timestamp(0)
+  users      users     @relation(fields: [student_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "student_class_ibfk_2")
+  classes    classes   @relation(fields: [class_id], references: [class_id], onDelete: NoAction, onUpdate: NoAction, map: "student_class_ibfk_1")
+
+  @@unique([student_id, class_id], map: "student_class_index_6")
+  @@index([class_id], map: "student_class_index_7")
+}
+
+model subjects {
+  sub_id         Int              @id @default(autoincrement())
+  sub_name       String           @db.VarChar(50)
+  created_by     Int
+  exam_templates exam_templates[]
+  question_banks question_banks[]
+  users          users            @relation(fields: [created_by], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "subjects_ibfk_1")
+
+  @@unique([sub_name, created_by], map: "subjects_index_4")
+  @@index([created_by], map: "created_by")
+}
+
+model users {
+  user_id                                                 Int                  @id @default(autoincrement())
+  email                                                   String               @unique(map: "email") @db.VarChar(255)
+  hashed_password                                         String               @db.VarChar(255)
+  full_name                                               String               @db.VarChar(100)
+  failed_attempts                                         Int?                 @default(0)
+  role                                                    users_role           @default(student)
+  created_at                                              DateTime?            @default(dbgenerated("(now())")) @db.Timestamp(0)
+  updated_at                                              DateTime?            @default(dbgenerated("'now()'")) @db.Timestamp(0)
+  is_active                                               Boolean              @default(true)
+  class_invitations                                       class_invitations[]
+  classes                                                 classes[]
+  exam_sessions                                           exam_sessions[]
+  exam_templates                                          exam_templates[]
+  noti_users                                              noti_users[]
+  notifications                                           notifications[]
+  question_banks                                          question_banks[]
+  retake_permissions_retake_permissions_created_byTousers retake_permissions[] @relation("retake_permissions_created_byTousers")
+  retake_requests                                         retake_requests[]
+  student_attempts                                        student_attempts[]
+  student_class                                           student_class[]
+  subjects                                                subjects[]
+
+  @@index([role], map: "users_index_0")
+}
+
+enum class_invitations_invit_status {
+  pending
+  accepted
+  expired
+}
+
+enum retake_requests_request_status {
+  pending
+  granted
+  rejected
+}
+
+enum users_role {
+  admin
+  teacher
+  student
+}
+
+enum student_attempts_attempt_status {
+  in_progress
+  submitted
+  timeout
+  graded
+}
+
+enum exam_sessions_session_status {
+  draft
+  published
+  ongoing
+  finished
+}
+
+enum proctoring_events_event_type {
+  tab_switch
+  copy
+  multiple_login
+  network_disconnect
+}
+
+enum question_banks_q_type {
+  single
+  multiple
+  true_false
+}
