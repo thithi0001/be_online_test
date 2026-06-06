@@ -27,7 +27,7 @@ export class ExamSessionService {
         });
 
         if (!existed)
-            throw new ForbiddenException('Không có quyền quản lý kỳ thi.');
+            throw new ForbiddenException('Không có quyền quản lý hoặc kỳ thi không tồn tại.');
     }
 
     async validateAndReturnForTeacher(
@@ -42,7 +42,7 @@ export class ExamSessionService {
         });
 
         if (!existed)
-            throw new ForbiddenException('Không có quyền quản lý kỳ thi.');
+            throw new ForbiddenException('Không có quyền quản lý hoặc kỳ thi không tồn tại.');
 
         return existed;
     }
@@ -64,7 +64,7 @@ export class ExamSessionService {
         });
 
         if (!existed)
-            throw new ForbiddenException('Không có quyền tham gia kỳ thi.');
+            throw new ForbiddenException('Không có quyền tham gia hoặc kỳ thi không tồn tại.');
     }
 
     private selectForStudent = {
@@ -97,6 +97,44 @@ export class ExamSessionService {
             throw new ForbiddenException('Không có quyền tham gia kỳ thi.');
     
         return existed;
+    }
+
+    async validateSessionTime(
+        session: any
+    ) {
+        const now = Date.now();
+
+        if (
+            now < session.start_time.getTime() ||
+            now > session.end_time.getTime()
+        ) {
+            throw new BadRequestException(
+                'Ngoài thời gian cho phép làm bài.',
+            );
+        }
+    }
+
+    async validateSessionPassword(
+        sessionId: number,
+        sessionPassword: string,
+    ) {
+        const session =
+            await this.prisma.exam_sessions.findUnique({
+                where: {
+                    session_id: sessionId,
+                },
+                select: {
+                    session_password: true,
+                },
+            });
+
+        if (
+            sessionPassword !== session?.session_password
+        ) {
+            throw new BadRequestException(
+                'Mật khẩu không đúng.',
+            );
+        }
     }
 
     async create(
