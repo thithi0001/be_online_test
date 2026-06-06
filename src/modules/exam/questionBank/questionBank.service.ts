@@ -25,7 +25,7 @@ export class QuestionBankService {
         });
 
         if (!existed)
-            throw new ForbiddenException('Không có quyền quản lý câu hỏi.');
+            throw new ForbiddenException('Không có quyền quản lý hoặc câu hỏi không tồn tại.');
     }
 
     private omit = {
@@ -61,7 +61,7 @@ export class QuestionBankService {
         });
 
         if (!existed)
-            throw new ForbiddenException('Không có quyền quản lý câu hỏi.');
+            throw new ForbiddenException('Không có quyền quản lý hoặc câu hỏi không tồn tại.');
 
         return existed;
     }
@@ -120,7 +120,7 @@ export class QuestionBankService {
                 q_type: dto.qType,
                 m_content: dto.content,
                 difficulty: dto.difficulty,
-                answers: {
+                answer_banks: {
                     create: dto.answers.map((a) => ({
                         is_correct: a.isCorrect,
                         m_content: a.content,
@@ -151,7 +151,7 @@ export class QuestionBankService {
                         m_content: q.content,
                         difficulty: q.difficulty,
                         // Nested Writes 
-                        answers: {
+                        answer_banks: {
                             create: q.answers.map((a) => ({
                                 is_correct: a.isCorrect,
                                 m_content: a.content,
