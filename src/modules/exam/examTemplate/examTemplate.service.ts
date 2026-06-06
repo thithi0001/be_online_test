@@ -1,8 +1,9 @@
 import { PrismaService } from "@/prisma/prisma.service";
 import { BadRequestException, ForbiddenException, Injectable } from "@nestjs/common";
-import { CreateExamTemplateDto, CreateTemplateQuestionDto, UpdateExamTemplateDto, UpdateTemplateQuestionDto } from "./dto/examTemplate.dto";
+import { CreateExamTemplateDto, CreateTemplateQuestionDto, UpdateExamTemplateDto } from "./dto/examTemplate.dto";
 import { QueryTemplateDto } from "./dto/examTemplate-response.dto";
 import { Role } from "@/common/enums/role.enum";
+import { AttemptStatus } from "@/common/enums/statuses.enum";
 
 @Injectable()
 export class ExamTemplateService {
@@ -23,10 +24,10 @@ export class ExamTemplateService {
         });
 
         if (!existed)
-            throw new ForbiddenException('Không có quyền quản lý đề.');
+            throw new ForbiddenException('Không có quyền quản lý hoặc đề thi không tồn tại.');
     }
 
-    async validateAndReturn(
+    async validateAndReturnForTeacher(
         teacherId: number,
         templateId: number,
     ) {
@@ -35,10 +36,37 @@ export class ExamTemplateService {
                 created_by: teacherId,
                 template_id: templateId,
             },
+            include: {
+                _count: { select: { exam_template_questions: true,},},
+            },
         });
 
         if (!existed)
-            throw new ForbiddenException('Không có quyền quản lý đề.');
+            throw new ForbiddenException('Không có quyền quản lý hoặc đề thi không tồn tại.');
+
+        return existed;
+    }
+
+    async validateAndReturnForStudent(
+        studentId: number,
+        templateId: number,
+    ) {
+        const existed = await this.prisma.exam_templates.findFirst({
+            where: {
+                template_id: templateId,
+                exam_sessions: {
+                    some: { student_attempts: {
+                        some: { student_id: studentId,},},
+                    },
+                },
+            },
+            include: {
+                _count: { select: { exam_template_questions: true,},},
+            },
+        });
+
+        if (!existed)
+            throw new ForbiddenException('Không có quyền xem hoặc đề thi không tồn tại.');
 
         return existed;
     }
@@ -94,14 +122,13 @@ export class ExamTemplateService {
     async create(
         teacherId: number,
         dto: CreateExamTemplateDto,
-        questions?: CreateTemplateQuestionDto[],
     ) {
         // không cho phép tạo đề nếu không có câu hỏi
-        if (!questions || questions.length < 1)
+        if (!dto.questions || dto.questions.length < 1)
             throw new BadRequestException('Đề thi cần phải chứa câu hỏi.');
         
         // không cho phép tạo đề nếu chứa câu hỏi không hợp lệ
-        const ids = questions.map((q) => q.questionId);
+        const ids = dto.questions.map((q) => q.questionId);
         await this.validateTemplateQuestions(ids);
 
         const template = await this.prisma.exam_templates.create({
@@ -112,7 +139,7 @@ export class ExamTemplateService {
             },
         });
 
-        await this.updateQuestions(template.template_id, questions);
+        await this.updateQuestions(template.template_id, dto.questions);
 
         return template;
     }
@@ -121,7 +148,6 @@ export class ExamTemplateService {
         teacherId: number,
         templateId: number,
         dto: UpdateExamTemplateDto,
-        questions?: CreateTemplateQuestionDto[],
     ) {
         await this.validateTeacherOwnership(teacherId, templateId);
 
@@ -129,7 +155,7 @@ export class ExamTemplateService {
         if (await this.isUsed(templateId))
             throw new BadRequestException('Không được phép chỉnh sửa đề thi.');
 
-        await this.updateQuestions(templateId, questions);
+        await this.updateQuestions(templateId, dto.questions);
 
         return await this.prisma.exam_templates.update({
             where: {
@@ -138,6 +164,9 @@ export class ExamTemplateService {
             data: {
                 template_name: dto.templateName,
                 sub_id: dto.subjectId,
+            },
+            include: {
+                _count: { select: { exam_template_questions: true,},},
             },
         });
     }
@@ -174,16 +203,11 @@ export class ExamTemplateService {
     }
 
     async getQuestions(
+        role: Role,
         templateId: number,
-        show?: boolean,
     ) {
         /**
-         * 1. hiển thị cho đề thi
-         * 1.1. gv xem, sửa, xóa đề -> xem hết thuộc tính
-         * 1.2. sv xem đề để làm bài -> ẩn isCorrect
-         * 2. hiển thị cho lịch sử làm bài
-         * 2.1. sau khi làm xong, nhưng chưa được phép xem đáp án đúng đối với sv -> ẩn
-         * 2.2. được phép xem toàn bộ -> xem hết thuộc tính
+         * chỉ hiện is_correct với gv
          */
 
         const orderByIndex = {
@@ -193,7 +217,7 @@ export class ExamTemplateService {
         const answerConfig =  {
             select: {
                 answer_id: true,
-                ...(show && { is_correct: true }),
+                ...(role === Role.TEACHER && { is_correct: true }),
                 m_content: true,
                 order_index: true,
             },
@@ -287,7 +311,21 @@ export class ExamTemplateService {
         role: Role,
         templateId: number,
     ) {
-        
+        switch (role) {
+            case Role.ADMIN:
+                break;
+                
+            case Role.TEACHER:
+                return await this.validateAndReturnForTeacher(userId, templateId);
+                
+            case Role.STUDENT:
+                return await this.validateAndReturnForStudent(userId, templateId);
+                
+            default:
+
+                break;
+                
+        }
     }
 
     async getMany(
@@ -318,6 +356,9 @@ export class ExamTemplateService {
                 skip: (page - 1) * limit,
                 take: limit,
                 orderBy: {template_name: 'asc'},
+                include: {
+                    _count: { select: { exam_template_questions: true,},},
+                },
             }),
 
             this.prisma.exam_templates.count({ where }),
