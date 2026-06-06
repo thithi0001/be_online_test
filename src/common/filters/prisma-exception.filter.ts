@@ -16,18 +16,23 @@ export class PrismaExceptionFilter implements ExceptionFilter {
             switch (exception.code) {
                 case 'P2002':
                     status = HttpStatus.CONFLICT;
-                    message = 'Dữ liệu đã tồn tại';
+                    message = 'Dữ liệu đã tồn tại.';
                     break;
 
                 case 'P2025':
                     status = HttpStatus.NOT_FOUND;
-                    message = 'Không tìm thấy dữ liệu';
+                    message = 'Không tìm thấy dữ liệu.';
                     break;
 
                 case 'P2003':
                     status = HttpStatus.BAD_REQUEST;
-                    message = 'Vi phạm khóa ngoại';
-                    break;
+                    message = 'Vi phạm khóa ngoại.';
+                    break;        
+
+                case 'P2011':
+                    status = HttpStatus.BAD_REQUEST;
+                    message = 'Dữ liệu không hợp lệ.';
+                    break;        
 
                 default:
                     status = HttpStatus.BAD_REQUEST;
