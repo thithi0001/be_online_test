@@ -21,7 +21,7 @@ export class SubjectService {
         });
 
         if (!existed)
-            throw new ForbiddenException('Không có quyền quản lý môn học.');
+            throw new ForbiddenException('Không có quyền quản lý hoặc môn học không tồn tại.');
     }
     
     async validateAndReturn(
@@ -33,10 +33,13 @@ export class SubjectService {
                 created_by: teacherId,
                 sub_id: subjectId,
             },
+            include: {
+                _count: { select: { question_banks: true,},},
+            },
         });
 
         if (!existed)
-            throw new ForbiddenException('Không có quyền quản lý môn học.');
+            throw new ForbiddenException('Không có quyền quản lý hoặc môn học không tồn tại.');
 
         return existed;
     }
@@ -82,6 +85,9 @@ export class SubjectService {
                 skip: (page - 1) * limit,
                 take: limit,
                 orderBy: {sub_name: 'asc'},
+                include: {
+                    _count: { select: { question_banks: true,},},
+                },
             }),
 
             this.prisma.subjects.count({ where }),
@@ -111,6 +117,9 @@ export class SubjectService {
             },
             data: {
                 sub_name: newSubjectName,
+            },
+            include: {
+                _count: { select: { question_banks: true,},},
             },
         });
     }
