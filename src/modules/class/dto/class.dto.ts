@@ -1,16 +1,38 @@
 import { PartialType } from "@nestjs/swagger";
-import { IsNumber, IsString } from "class-validator";
+import { ArrayNotEmpty, IsArray, IsEmail, IsInt, IsNotEmpty, IsString } from "class-validator";
 
 export class CreateClassDto {
-    @IsNumber()
+    @IsInt()
     classId?: number;
 
-    @IsNumber()
-    teacherId: number;
+    @IsInt()
+    teacherId?: number;
     
     @IsString()
+    @IsNotEmpty()
     className: string;
 }
 
 export class UpdateClassDto 
     extends PartialType(CreateClassDto) {}
+
+export class AddStudentsDto {
+    @IsArray()
+    @ArrayNotEmpty()
+    @IsInt({ each: true })
+    studentIds: number[];
+}
+
+export class AddOneStudentDto {
+    @IsEmail()
+    email: string;
+}
+
+export class ImportStudentDto {
+    @IsString()
+    @IsNotEmpty()
+    fullName: string;
+
+    @IsEmail()
+    email: string;
+}

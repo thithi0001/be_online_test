@@ -1,6 +1,6 @@
-import { ForbiddenException, Injectable} from "@nestjs/common";
+import { BadRequestException, ForbiddenException, Injectable} from "@nestjs/common";
 import { PrismaService } from "@/prisma/prisma.service";
-import { CreateClassDto } from "./dto/class.dto";
+import { CreateClassDto, ImportStudentDto } from "./dto/class.dto";
 import { Role } from "@/common/enums/role.enum";
 import { QueryClassDto } from "./dto/class-respsonse.dto";
 import { QueryUserDto } from "../user/dto/user-response.dto";
@@ -14,7 +14,9 @@ export class ClassService {
      * xem danh sách lớp
      */
 
-    constructor(private prisma: PrismaService) {}
+    constructor(
+        private prisma: PrismaService,
+    ) {}
 
     async validateTeacherOwnerShip(
         teacherId: number,
@@ -31,7 +33,7 @@ export class ClassService {
         });
 
         if (!existed)
-            throw new ForbiddenException('Không có quyền quản lý lớp.');
+            throw new ForbiddenException('Không có quyền quản lý hoặc lớp học không tồn tại.');
     }
 
     async validateAndReturnForTeacher(
@@ -43,10 +45,13 @@ export class ClassService {
                 class_id: classId,
                 teacher_id: teacherId,
             },
+            include: {
+                _count: { select: { student_class: true,},},
+            },
         });
 
         if (!existed)
-            throw new ForbiddenException('Không có quyền quản lý lớp.');
+            throw new ForbiddenException('Không có quyền quản lý hoặc lớp học không tồn tại.');
 
         return existed;
     }
@@ -66,7 +71,7 @@ export class ClassService {
         });
 
         if (!existed)
-            throw new ForbiddenException('Không có quyền tham gia lớp.');
+            throw new ForbiddenException('Không có quyền tham gia hoặc lớp học không tồn tại.');
     }
 
     async validateAndReturnForStudent(
@@ -78,20 +83,24 @@ export class ClassService {
                 class_id: classId,
                 student_class: { some: { student_id: studentId },},
             },
+            include: {
+                _count: { select: { student_class: true,},},
+            },
         });
 
         if (!existed)
-            throw new ForbiddenException('Không có quyền tham gia lớp.');
+            throw new ForbiddenException('Không có quyền tham gia hoặc lớp học không tồn tại.');
 
         return existed;
     }
 
     async create(
+        teacherId: number,
         dto: CreateClassDto,
     ) {
         return await this.prisma.classes.create({
             data: {
-                teacher_id: dto.teacherId,
+                teacher_id: teacherId,
                 class_name: dto.className,
             },
         });
@@ -110,22 +119,111 @@ export class ClassService {
             data: {
                 class_name: newName,
             },
+            include: {
+                _count: { select: { student_class: true,},},
+            },
+        });
+    }
+
+    async addOneStudent(
+        teacherId: number,
+        classId: number,
+        email: string,
+    ) {
+        await this.validateTeacherOwnerShip(teacherId, classId);
+
+        const student = await this.prisma.users.findUnique({
+            where: { email: email },
+            select: {
+                user_id: true,
+                email: true,
+                full_name: true, 
+                role: true,
+            },
+        });
+
+        // trường hợp sinh viên chưa tạo tài khoản 
+        if (!student) {
+            await this.prisma.class_invitations.create({
+                data: {
+                    class_id: classId,
+                    email: email,
+                    invited_by: teacherId,
+                },
+            });
+
+            return {
+                message: 'Sinh viên chưa đăng ký tài khoản, đã gửi lời mời.',
+            };
+        }
+            
+        // không phải tài khoản student
+        if (student.role !== Role.STUDENT) 
+            throw new BadRequestException('Người dùng không phải sinh viên.');
+            
+        return await this.prisma.student_class.create({
+            data: {
+                class_id: classId,
+                student_id: student.user_id,
+            },
         });
     }
 
     async addStudents(
         teacherId: number,
         classId: number,
-        studentIds: number[],
+        // danh sách đã được lọc
+        dtos: ImportStudentDto[],
     ) {
         await this.validateTeacherOwnerShip(teacherId, classId);
 
-        return await this.prisma.student_class.createMany({
-            data: studentIds.map((studentId) => ({
+        const { studentIds, invitedEmails } = await this.resolveStudents(dtos.map(dto => dto.email));
+
+        await this.prisma.class_invitations.createMany({
+            data: invitedEmails.map(email => ({
                 class_id: classId,
-                student_id: studentId,
+                email: email,
+                invited_by: teacherId,
             })),
         });
+
+        return await this.prisma.student_class.createMany({
+            data: studentIds.map((id) => ({
+                class_id: classId,
+                student_id: id,
+            })),
+        });
+    }
+
+    async resolveStudents(
+        emails: string[],
+    ) {
+        const users = await this.prisma.users.findMany({
+            where: {
+                email: { in: emails,},
+                role: 'student',
+                is_active: true,
+            },
+            select: {
+                user_id: true,
+                email: true,
+            },
+        });
+
+        const studentIds = users.map(u => u.user_id);
+
+        const registeredEmails = new Set(
+            users.map(u => u.email.toLowerCase()),
+        );
+
+        const invitedEmails = emails.filter(
+            email => !registeredEmails.has(email.toLowerCase()),
+        );
+
+        return {
+            studentIds,
+            invitedEmails,
+        };
     }
     
     async getClassMembers(
@@ -199,6 +297,9 @@ export class ClassService {
                     where: {
                         class_id: classId,
                     },
+                    include: {
+                        _count: { select: { student_class: true,},},
+                    },
                 });
         }
     }
@@ -241,6 +342,9 @@ export class ClassService {
                 skip: (page - 1) * limit,
                 take: limit,
                 orderBy: { class_name: 'asc' },
+                include: {
+                    _count: { select: { student_class: true,},},
+                },
             }),
 
             this.prisma.classes.count({ where }),

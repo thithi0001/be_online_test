@@ -1,6 +1,6 @@
 import { PaginationResponseDto } from "@/common/dtos/pagination-response.dto";
-import { Expose } from "class-transformer";
-import { IsOptional } from "class-validator";
+import { Expose, Transform, Type } from "class-transformer";
+import { IsInt, IsOptional, IsString, Min } from "class-validator";
 
 export class ClassRespsonseDto {
     @Expose({name: 'class_id'})
@@ -11,6 +11,10 @@ export class ClassRespsonseDto {
 
     @Expose({name: 'class_name'})
     className: string;
+
+    @Expose()
+    @Transform(({obj}) => obj._count.student_class)
+    numberOfStudents?: number;
 }
 
 export class PaginatedClassDto
@@ -18,16 +22,23 @@ export class PaginatedClassDto
 
 export class QueryClassDto {
     @IsOptional()
+    @IsString()
     keyword?: string;
 
     @IsOptional()
+    @Type(() => Number)
+    @IsInt()
+    @Min(1)
     page?: number;
 
     @IsOptional()
+    @Type(() => Number)
+    @IsInt()
+    @Min(1)
     limit?: number;
 }
 
-export class ClassMemberDto {
+export class ClassMemberResponseDto {
     @Expose({name: 'user_id'})
     studentId: number;
 
