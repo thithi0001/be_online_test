@@ -110,12 +110,6 @@ model exam_templates {
   @@index([sub_id], map: "sub_id")
 }
 
-model noti_types {
-  type_id       Int             @id @default(autoincrement())
-  type_name     String          @db.Text
-  notifications notifications[]
-}
-
 model noti_users {
   noti_id       Int
   user_id       Int
@@ -130,16 +124,13 @@ model noti_users {
 
 model notifications {
   noti_id    Int          @id @default(autoincrement())
-  type_id    Int
   m_content  String       @db.Text
   created_by Int
   created_at DateTime?    @default(dbgenerated("(now())")) @db.Timestamp(0)
   noti_users noti_users[]
-  noti_types noti_types   @relation(fields: [type_id], references: [type_id], onDelete: NoAction, onUpdate: NoAction, map: "notifications_ibfk_2")
   users      users        @relation(fields: [created_by], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "notifications_ibfk_1")
 
   @@index([created_by], map: "created_by")
-  @@index([type_id], map: "type_id")
 }
 
 model proctoring_events {
@@ -197,7 +188,7 @@ model retake_requests {
   exam_sessions      exam_sessions                   @relation(fields: [session_id], references: [session_id], onDelete: NoAction, onUpdate: NoAction, map: "retake_requests_ibfk_1")
   users              users                           @relation(fields: [student_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "retake_requests_ibfk_2")
 
-  @@index([session_id], map: "session_id")
+  @@unique([session_id, student_id], map: "retake_requests_index_11")
   @@index([student_id], map: "student_id")
 }
 
@@ -220,6 +211,7 @@ model student_attempts {
   attempt_status          student_attempts_attempt_status? @default(in_progress)
   attempt_no              Int
   is_retake               Boolean?                         @default(false)
+  shuffle_seed            String?                          @db.VarChar(40)
   start_time              DateTime?                        @default(dbgenerated("(now())")) @db.Timestamp(0)
   submit_time             DateTime?                        @db.Timestamp(0)
   total_score             Decimal?                         @default(0.00) @db.Decimal(5, 2)

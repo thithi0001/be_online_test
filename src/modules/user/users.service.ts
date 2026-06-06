@@ -52,7 +52,7 @@ export class UserService {
         });
 
         if (!user) {
-            throw new NotFoundException('Không tìm thấy người dùng');
+            throw new NotFoundException('Không tìm thấy người dùng.');
         }
         
         return user;
@@ -67,7 +67,7 @@ export class UserService {
         });
 
         if (!user) {
-            throw new NotFoundException('Không tìm thấy người dùng');
+            throw new NotFoundException('Không tìm thấy người dùng.');
         }
 
         return user;
