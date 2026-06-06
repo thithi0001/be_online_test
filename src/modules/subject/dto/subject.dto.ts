@@ -1,16 +1,17 @@
 import { PaginationResponseDto } from "@/common/dtos/pagination-response.dto";
 import { PartialType } from "@nestjs/swagger";
-import { Expose } from "class-transformer";
-import { IsNumber, IsOptional, IsString } from "class-validator";
+import { Expose, Transform, Type } from "class-transformer";
+import { IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, Min } from "class-validator";
 
 export class CreateSubjectDto {
-    @IsNumber()
+    @IsInt()
     subjectId?: number;
 
-    @IsNumber()
-    createdBy: number;
+    @IsInt()
+    createdBy?: number;
 
     @IsString()
+    @IsNotEmpty()
     subjectName: string;
 }
 
@@ -26,6 +27,10 @@ export class SubjectResponseDto {
 
     @Expose({name: 'sub_name'})
     subjectName: string;
+
+    @Expose()
+    @Transform(({obj}) => obj._count.question_banks)
+    numberOfQuestions?: number;
 }
 
 export class PaginatedSubjectDto 
@@ -33,14 +38,23 @@ export class PaginatedSubjectDto
 
 export class QuerySubjectDto {
     @IsOptional()
+    @IsString()
     keyword?: string;
 
     @IsOptional()
+    @Type(() => Number)
+    @IsInt()
+    @Min(1)
     page?: number;
     
     @IsOptional()
+    @Type(() => Number)
+    @IsInt()
+    @Min(1)
     limit?: number;
 
     @IsOptional()
+    @Type(() => Number)
+    @IsInt()
     createdBy?: number;
 }

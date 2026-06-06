@@ -1,28 +1,30 @@
 import { QuestionType } from "@/common/enums/questionType.enum";
-import { IsArray, IsBoolean, IsEnum, IsNumber, IsString, ValidateNested } from "class-validator";
+import { ArrayNotEmpty, IsArray, IsBoolean, IsEnum, IsInt, IsNotEmpty, IsNumber, IsString, MaxLength, ValidateNested } from "class-validator";
 import { PartialType } from "@nestjs/swagger";
 import { Type } from "class-transformer";
 
 export class CreateQuestionBankDto {
-    @IsNumber()
+    @IsInt()
     questionId?: number;
 
-    @IsNumber()
+    @IsInt()
     subjectId: number;
 
-    @IsNumber()
+    @IsInt()
     createdBy: number;
     
     @IsEnum(QuestionType)
     qType: QuestionType;
 
     @IsString()
+    @IsNotEmpty()
     content: string;
 
-    @IsNumber()
+    @IsInt()
     difficulty?: number;
 
     @IsArray()
+    @ArrayNotEmpty()
     @ValidateNested()
     @Type(() => CreateAnswerBankDto)
     answers: CreateAnswerBankDto[];
@@ -32,19 +34,22 @@ export class UpdateQuestionBankDto
     extends PartialType(CreateQuestionBankDto) {}
 
 export class CreateAnswerBankDto {
-    @IsNumber()
+    @IsInt()
     answerId?: number;
 
-    @IsNumber()
+    @IsInt()
     questionId?: number;
     
     @IsBoolean()
     isCorrect: boolean;
     
     @IsString()
+    @IsNotEmpty()
     content: string;
     
     @IsString()
+    @IsNotEmpty()
+    @MaxLength(1)
     orderIndex: string;
 }
 

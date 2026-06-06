@@ -1,21 +1,21 @@
 import { SessionStatus } from "@/common/enums/statuses.enum";
 import { PartialType } from "@nestjs/swagger";
-import { IsArray, IsBoolean, IsDate, IsEnum, IsNumber, IsString } from "class-validator";
+import { IsArray, IsBoolean, IsDate, IsEnum, IsInt, IsNotEmpty, IsString, Min } from "class-validator";
 
 export class CreateExamSessionDto {
-    @IsNumber()
+    @IsInt()
     sessionId?: number;
     
-    @IsNumber()
+    @IsInt()
     templateId: number;
     
-    @IsNumber()
+    @IsInt()
     createdBy: number;
     
     @IsString()
     sessionName: string;
     
-    @IsNumber()
+    @IsInt()
     duration: number;
     
     @IsBoolean()
@@ -39,17 +39,19 @@ export class CreateExamSessionDto {
     @IsDate()
     endTime: Date;
     
-    @IsNumber()
+    @IsInt()
+    @Min(1)
     attemptLimit?: number;
     
     @IsString()
+    @IsNotEmpty()
     sessionPassword: string;
     
     @IsEnum(SessionStatus)
     sessionStatus: SessionStatus;
 
     @IsArray()
-    @IsNumber()
+    @IsInt({ each: true })
     classIds?: number[];
 }
 

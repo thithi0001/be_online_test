@@ -1,15 +1,17 @@
 import { Role } from '@/common/enums/role.enum';
 import { PartialType } from '@nestjs/swagger';
-import { IsEmail, IsEnum, IsString, MinLength } from 'class-validator';
+import { IsEmail, IsEnum, IsNotEmpty, IsString, MinLength } from 'class-validator';
 
 export class CreateUserDto {
   @IsEmail()
   email: string;
 
+  @IsString()
   @MinLength(6)
   password: string;
 
   @IsString()
+  @IsNotEmpty()
   fullName: string;
 
   @IsEnum(Role)

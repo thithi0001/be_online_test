@@ -1,7 +1,7 @@
 import { PaginationResponseDto } from "@/common/dtos/pagination-response.dto";
 import { QuestionType } from "@/common/enums/questionType.enum";
 import { Expose, Type } from "class-transformer";
-import { IsOptional } from "class-validator";
+import { IsEnum, IsInt, IsOptional, IsString, Min } from "class-validator";
 
 export class AnswerResponseDto {
     @Expose({name: 'answer_id'})
@@ -49,23 +49,37 @@ export class PaginatedQuestionDto
 
 export class QueryQuestionDto {
     @IsOptional()
+    @IsString()
     keyword?: string;
 
     @IsOptional()
+    @Type(() => Number)
+    @IsInt()
+    @Min(1)
     page?: number;
 
     @IsOptional()
+    @Type(() => Number)
+    @IsInt()
+    @Min(1)
     limit?: number;
     
     @IsOptional()
+    @Type(() => Number)
+    @IsInt()
     subjectId?: number;
     
     @IsOptional()
+    @Type(() => Number)
+    @IsInt()
     createdBy?: number;
 
     @IsOptional()
+    @IsEnum(QuestionType)
     qType?: QuestionType;
     
     @IsOptional()
+    @Type(() => Number)
+    @IsInt()
     difficulty?: number;
 }

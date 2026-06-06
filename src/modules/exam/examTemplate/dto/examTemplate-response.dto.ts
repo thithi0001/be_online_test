@@ -1,8 +1,9 @@
 import { PaginationResponseDto } from "@/common/dtos/pagination-response.dto";
 import { QuestionType } from "@/common/enums/questionType.enum";
-import { Expose, Type } from "class-transformer";
-import { IsOptional } from "class-validator";
+import { Expose, Transform, Type } from "class-transformer";
+import { IsInt, IsOptional, IsString, Min } from "class-validator";
 import { AnswerResponseDto, QuestionResponseDto } from "../../questionBank/dto/question-response.dto";
+import { WithTotalResponseDto } from "@/common/dtos/with-total-response.dto";
 
 export class ExamTemplateResponseDto {
     @Expose({name: 'template_id'})
@@ -19,6 +20,10 @@ export class ExamTemplateResponseDto {
 
     @Expose({name: 'is_active'})
     isActive: boolean;
+
+    @Expose()
+    @Transform(({obj}) => obj._count.exam_template_questions)
+    numberOfQuestions?: number;
 }
 
 export class PaginatedTemplateDto
@@ -26,18 +31,31 @@ export class PaginatedTemplateDto
 
 export class QueryTemplateDto {
     @IsOptional()
+    @IsString()
     keyword?: string;
 
     @IsOptional()
+    @Type(() => Number)
+    @IsInt()
+    @Min(1)
     page?: number
 
     @IsOptional()
+    @Type(() => Number)
+    @IsInt()
+    @Min(1)
     limit?: number
     
     @IsOptional()
+    @Type(() => Number)
+    @IsInt()
+    @Min(1)
     createdBy?: number
     
     @IsOptional()
+    @Type(() => Number)
+    @IsInt()
+    @Min(1)
     subjectId?: number
 }
 
@@ -55,3 +73,6 @@ export class TemplateQuestionResponseDto {
     @Expose({name: 'question_banks'})
     data: QuestionResponseDto;
 }
+
+export class TemplateQuestionArrayResponseDto 
+    extends WithTotalResponseDto<TemplateQuestionResponseDto> {}

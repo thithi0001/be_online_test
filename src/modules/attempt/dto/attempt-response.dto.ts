@@ -1,7 +1,7 @@
 import { PaginationResponseDto } from "@/common/dtos/pagination-response.dto";
 import { AttemptStatus } from "@/common/enums/statuses.enum";
-import { Expose } from "class-transformer";
-import { IsOptional } from "class-validator";
+import { Expose, Type } from "class-transformer";
+import { IsBoolean, IsEnum, IsInt, IsOptional, Min } from "class-validator";
 
 export class AttemptResponseDto {
     @Expose({name: 'attempt_id'})
@@ -12,9 +12,6 @@ export class AttemptResponseDto {
 
     @Expose({name: 'session_id'})
     sessionId: number;
-
-    @Expose({name: 'form_id'})
-    formId: number;
 
     @Expose({name: 'ip_address'})
     ipAddress: string;
@@ -28,22 +25,32 @@ export class AttemptResponseDto {
     @Expose({name: 'is_retake'})
     isRetake: boolean;
 
+    @Expose({name: 'shuffle_seed'})
+    shuffleSeed: string;
+
     @Expose({name: 'start_time'})
     startTime: Date;
 
     @Expose({name: 'submit_time'})
-    submitTime: Date;
+    submitTime?: Date;
 
     @Expose({name: 'total_score'})
-    totalScore: number;
+    totalScore?: number;
 }
 
-export class AttemptAnswerResponseDto {
-    @Expose()
-    questionId: number;
-
-    @Expose()
+export class SelectedAnswerResponseDto {
+    @Expose({name: 'answer_id'})
     answerId: number;
+}
+
+export class AttemptWithAnswerResponseDto {
+    @Type(() => AttemptResponseDto)
+    @Expose()
+    attempt: AttemptResponseDto;
+    
+    @Type(() => SelectedAnswerResponseDto)
+    @Expose()
+    selectedAnswers: SelectedAnswerResponseDto[];
 }
 
 export class PaginatedAttemptDto 
@@ -51,21 +58,39 @@ export class PaginatedAttemptDto
 
 export class QueryAttemptDto {
     @IsOptional()
+    @Type(() => Number)
+    @IsInt()
+    @Min(1)
     page?: number;
     
     @IsOptional()
+    @Type(() => Number)
+    @IsInt()
+    @Min(1)
     limit?: number;
     
     @IsOptional()
+    @Type(() => Number)
+    @IsInt()
     studentId?: number;
     
     @IsOptional()
+    @Type(() => Number)
+    @IsInt()
     sessionId?: number;
     
     @IsOptional()
+    @Type(() => Number)
+    @IsBoolean()
     isRetake?: boolean;
     
     @IsOptional()
+    @IsEnum(AttemptStatus)
     status?: AttemptStatus;
+
+    @IsOptional()
+    @Type(() => Number)
+    @IsInt()
+    classId?: number;
 }
 

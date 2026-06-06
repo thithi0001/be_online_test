@@ -1,7 +1,7 @@
 import { PaginationResponseDto } from "@/common/dtos/pagination-response.dto";
 import { SessionStatus } from "@/common/enums/statuses.enum";
-import { Expose } from "class-transformer";
-import { IsOptional } from "class-validator";
+import { Expose, Type } from "class-transformer";
+import { IsDate, IsInt, IsOptional, IsString, Min } from "class-validator";
 
 export class ExamSessionResponseDto {
     @Expose({name: 'session_id'})
@@ -52,26 +52,41 @@ export class PaginatedSessionDto
 
 export class QuerySessionDto {
     @IsOptional()
+    @IsString()
     keyword?: string;
 
     @IsOptional()
+    @Type(() => Number)
+    @IsInt()
+    @Min(1)
     page?: number
 
     @IsOptional()
+    @Type(() => Number)
+    @IsInt()
+    @Min(1)
     limit?: number
     
     @IsOptional()
+    @Type(() => Number)
+    @IsInt()
     createdBy?: number
     
     @IsOptional()
     status?: SessionStatus;
     
     @IsOptional()
+    @Type(() => Number)
+    @IsInt()
     classId?: number;
 
     @IsOptional()
+    @Type(() => Date)
+    @IsDate()
     startFrom?: Date;
-
+    
     @IsOptional()
+    @Type(() => Date)
+    @IsDate()
     startTo?: Date;
 }

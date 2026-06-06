@@ -1,43 +1,23 @@
-import { AttemptStatus } from "@/common/enums/statuses.enum";
 import { PartialType } from "@nestjs/swagger";
-import { IsBoolean, IsDate, IsEnum, IsJSON, IsNumber, IsString } from "class-validator";
+import { IsInt, IsIP, IsNotEmpty, IsObject} from "class-validator";
 
 export class CreateAttemptDto {
-    @IsNumber()
+    @IsInt()
     attemptId?: number;
 
-    @IsNumber()
+    @IsInt()
     studentId: number;
 
-    @IsNumber()
+    @IsInt()
     sessionId: number;
 
-    @IsString()
+    @IsIP()
     ipAddress: string;
 
-    @IsJSON()
-    deviceInfo: object;
-
-    @IsEnum(AttemptStatus)
-    attemptStatus?: AttemptStatus;
-
-    @IsDate()
-    startTime: Date;
-
-    @IsDate()
-    submitTime: Date;
-
-    @IsNumber()
-    totalScore: number;
+    @IsObject()
+    @IsNotEmpty()
+    deviceInfo: Record<string, any>;
 }
 
 export class UpdateAttemptDto 
     extends PartialType(CreateAttemptDto) {}
-
-export class CreateStudentAnswerDto {
-    @IsNumber()
-    questionId: number;
-    
-    @IsNumber()
-    answerId: number;
-}

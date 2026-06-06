@@ -1,7 +1,7 @@
 import { PaginationResponseDto } from '@/common/dtos/pagination-response.dto';
 import { Role } from '@/common/enums/role.enum';
-import { Expose } from 'class-transformer';
-import { IsOptional } from 'class-validator';
+import { Expose, Type } from 'class-transformer';
+import { IsInt, IsOptional, IsString, Min } from 'class-validator';
 
 export class UserResponseDto {
     @Expose({name: 'user_id'})
@@ -22,11 +22,18 @@ export class PaginatedUserDto
 
 export class QueryUserDto {
     @IsOptional()
+    @IsString()
     keyword?: string;
 
     @IsOptional()
+    @Type(() => Number)
+    @IsInt()
+    @Min(1)
     page?: number;
 
     @IsOptional()
+    @Type(() => Number)
+    @IsInt()
+    @Min(1)
     limit?: number;
 }

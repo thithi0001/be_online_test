@@ -1,34 +1,44 @@
 import { PartialType } from "@nestjs/swagger";
-import { IsNumber, IsString } from "class-validator";
+import { Type } from "class-transformer";
+import { ArrayNotEmpty, IsArray, IsInt, IsNotEmpty, IsNumber, IsString, Min, ValidateNested } from "class-validator";
 
 export class CreateExamTemplateDto {
-    @IsNumber()
+    @IsInt()
     templateId?: number;
     
-    @IsNumber()
+    @IsInt()
     teacherId: number;
     
-    @IsNumber()
+    @IsInt()
     subjectId: number;
     
     @IsString()
+    @IsNotEmpty()
     templateName: string;
+
+    @IsArray()
+    @ArrayNotEmpty()
+    @ValidateNested()
+    @Type(() => CreateTemplateQuestionDto)
+    questions: CreateTemplateQuestionDto[];
 }
 
 export class UpdateExamTemplateDto 
     extends PartialType(CreateExamTemplateDto) {}
 
 export class CreateTemplateQuestionDto {
-    @IsNumber()
+    @IsInt()
     templateId?: number;
     
-    @IsNumber()
+    @IsInt()
     questionId: number;
     
     @IsNumber()
+    @Min(0)
     score: number;
     
-    @IsNumber()
+    @IsInt()
+    @Min(1)
     orderIndex: number;
 }
 
