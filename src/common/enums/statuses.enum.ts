@@ -18,7 +18,7 @@ export enum AttemptStatus {
     GRADED = 'graded',
 }
 
-export enum RequestStatus {
+export enum RetakeStatus {
     PENDING = 'pending',
     GRANTED = 'granted',
     REJECTED = 'rejected',
