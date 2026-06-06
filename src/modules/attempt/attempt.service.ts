@@ -1,15 +1,19 @@
 import { Role } from "@/common/enums/role.enum";
 import { PrismaService } from "@/prisma/prisma.service";
-import { BadRequestException, ForbiddenException, Injectable } from "@nestjs/common";
-import { CreateAttemptDto, CreateStudentAnswerDto } from "./dto/attempt.dto";
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+import { CreateAttemptDto } from "./dto/attempt.dto";
 import { QueryAttemptDto } from "./dto/attempt-response.dto";
 import { ExamSessionService } from "../exam/examSession/examSession.service";
+import { AttemptStatus, SessionStatus } from "@/common/enums/statuses.enum";
+import { randomBytes } from "crypto";
+import { ClassService } from "../class/class.service";
 
 @Injectable()
 export class AttemptService {
     constructor(
         private prisma: PrismaService,
         private examSessionService: ExamSessionService,
+        private classService: ClassService,
     ) {}
     
     async validateTeacherOwnership(
@@ -27,6 +31,7 @@ export class AttemptService {
                 exam_sessions: {
                     created_by: teacherId,
                 },
+                attempt_status: { not: AttemptStatus.INPROGRESS },
             },
             select: {
                 attempt_id: true,
@@ -34,12 +39,12 @@ export class AttemptService {
         });
 
         if (!existed)
-            throw new ForbiddenException('Không được phép xem bài làm.');
+            throw new ForbiddenException('Không được phép xem hoặc bài làm không tồn tại.');
     }
     
     async validateStudentOwnership(
         studentId: number,
-        attemptId: number
+        attemptId: number,
     ) {
         const existed = await this.prisma.student_attempts.findFirst({
             where: {
@@ -52,7 +57,7 @@ export class AttemptService {
         });
 
         if (!existed)
-            throw new ForbiddenException('Không được phép xem bài làm.');
+            throw new ForbiddenException('Không được phép xem hoặc bài làm không tồn tại.');
     }
 
     async validateAttemptEligibility(
@@ -69,13 +74,59 @@ export class AttemptService {
             .validateAndReturnForStudent(studentId, sessionId);
         
         // 2. kỳ thi đã được mở và đang còn mở
-        const now = new Date().getTime();
-        if (now < session.start_time.getTime() || 
-            now > session.end_time.getTime() )
-            throw new BadRequestException('Ngoài thời gian cho phép làm bài.');
+        await this.examSessionService
+            .validateSessionTime(session);
         
         // 3. số lần làm bài trong giới hạn quy định
         // 4. hoặc sv được cho phép làm bài lại
+        const { attempted, retake, reachedLimit } =
+            await this.validateAttemptLimit(
+                studentId,
+                sessionId,
+                session,
+            );
+
+        if (!!retake)
+            await this.validateInRetakeTime(retake);
+
+        if (reachedLimit)
+            throw new BadRequestException(
+                'Đã đạt giới hạn cho phép làm bài.',
+            );
+
+        // 5. sv đang không có tham gia làm bài thi nào
+        await this.validateNoActiveAttempt(studentId);
+
+        // 6. sv nhập đúng mật khẩu kỳ thi
+        await this.examSessionService
+            .validateSessionPassword(sessionId, sessionPassword);
+
+        return { 
+            attemptNo: attempted + 1, 
+            isRetake: !!retake, 
+        };
+    }
+
+    async validateInRetakeTime(
+        retake: any
+    ) {
+        const now = Date.now();
+
+        if (
+            now < retake.available_from.getTime() ||
+            now > retake.available_to.getTime()
+        ) {
+            throw new BadRequestException(
+                'Ngoài thời gian cho phép làm bài.',
+            );
+        }
+    }
+
+    async validateAttemptLimit(
+        studentId: number,
+        sessionId: number,
+        session: any,
+    ) {
         const [attempted, retake] = await this.prisma.$transaction([
             this.prisma.student_attempts.count({
                 where: {
@@ -84,9 +135,9 @@ export class AttemptService {
                 },
             }),
 
-            this.prisma.retake_permissions.findUnique({
+            this.prisma.retake_permissions.findFirst({
                 where: {
-                    session_id_student_id: {
+                    retake_requests: {
                         session_id: sessionId,
                         student_id: studentId,
                     },
@@ -94,34 +145,37 @@ export class AttemptService {
             }),
         ]);
 
-        if (!retake) {
-            if (attempted >= Number(session.attempt_limit))
-                throw new BadRequestException('Đã đạt giới hạn cho phép làm bài.');
-        } else {
-            if (attempted >= Number(retake.max_attempt))
-                throw new BadRequestException('Đã đạt giới hạn cho phép làm bài.');
-        }
+        const maxAttempt = !!retake
+            ? Number(retake.max_attempt)
+            : Number(session.attempt_limit);
 
-        // 5. sv đang không có tham gia làm bài thi nào
+        const reachedLimit = attempted >= maxAttempt;
 
-        // 6. sv nhập đúng mật khẩu kỳ thi
-        const password = await this.prisma.exam_sessions.findUnique({
-            where: {
-                session_id: sessionId
-            },
-            select: {
-                session_password: true,
-            },
-        });
-        if (sessionPassword !== String(password))
-            throw new BadRequestException('Mật khẩu không đúng.');
-        
-        const attemptNo = attempted + 1;
-        const isRetake = retake ? true : false;
-        
-        return { attemptNo, isRetake };
+        return {
+            attempted,
+            retake,
+            reachedLimit,
+        };
     }
-    
+
+    async validateNoActiveAttempt(
+        studentId: number,
+    ) {
+        const attempting =
+            await this.prisma.student_attempts.findFirst({
+                where: {
+                    student_id: studentId,
+                    attempt_status: AttemptStatus.INPROGRESS,
+                },
+            });
+
+        if (attempting) {
+            throw new BadRequestException(
+                'Không được phép tham gia nhiều bài thi cùng lúc.',
+            );
+        }
+    }
+
     async create(
         studentId: number,
         sessionPassword: string,
@@ -146,23 +200,22 @@ export class AttemptService {
             data: {
                 student_id: studentId,
                 session_id: dto.sessionId,
-                form_id: dto.formId,
                 ip_address: dto.ipAddress,
                 device_info: dto.deviceInfo,
                 attempt_no: attemptNo,
                 is_retake: isRetake,
+                shuffle_seed: randomBytes(16).toString('hex'),
             },
         });
     }
     
-    /**
-     * nộp bài --> submitTime, attemptStatus = submitted | timeout
-     * tính điểm --> totalScore, attemptStatus = graded
-     */
     async update(
         studentId: number,
         attemptId: number,
-        answers: CreateStudentAnswerDto[],
+        // danh sách đã được lọc chứa lựa chọn mới
+        newAnswerIds: number[],
+        // danh sách chứa lựa chọn đã bị loại bỏ
+        deleteAnswerIds: number[],
     ) {
         /**
          * ghi đáp án sinh viên đã chọn vào db
@@ -170,32 +223,194 @@ export class AttemptService {
          */
         await this.validateStudentOwnership(studentId, attemptId);
 
+        await this.prisma.student_attempt_answers.deleteMany({
+            where: {
+                answer_id: { in: deleteAnswerIds },
+            },
+        });
+
         return await this.prisma.student_attempt_answers.createMany({
-            data: answers.map((a) => ({
+            data: newAnswerIds.map(id => ({
                 attempt_id: attemptId,
-                form_question_id: a.questionId,
-                form_answer_id: a.answerId,
+                answer_id: id,
             })),
         });
     }
 
     async submit(
+        studentId: number,
         attemptId: number,
+        // danh sách đã được lọc chứa lựa chọn mới
+        newAnswerIds: number[],
+        // danh sách chứa lựa chọn đã bị loại bỏ
+        deleteAnswerIds: number[],
+        // nếu sv chủ động nộp bài -> SUBMITTED
+        // nếu hết giờ, hệ thống tự động nộp -> TIMEOUT
+        status: AttemptStatus.SUBMITTED | AttemptStatus.TIMEOUT,
     ) {
+        await this.update(studentId, attemptId, newAnswerIds, deleteAnswerIds);
 
+        return await this.prisma.student_attempts.update({
+            where: {
+                attempt_id: attemptId,
+            },
+            data: {
+                submit_time: new Date(),
+                attempt_status: status,
+            },
+        });
     }
 
+    /** 
+     * có thể đơn giản hàm + tối ưu truy vấn bằng cách
+     * thêm question_id vào student_attempt_answers
+     * -> dư thừa có kiểm soát
+     */ 
     async grade(
         attemptId: number,
     ) {
+        // lấy đáp án sv đã chọn
+        const selectedAnswers = await this.prisma.student_attempt_answers.findMany({
+            where: {
+                attempt_id: attemptId,
+            },
+            select: {
+                answer_id: true,
+                answer_banks: { select: { question_id: true,},},
+            },
+        });
 
+        // lấy câu hỏi trong bài làm (không phải toàn bộ đề)
+        const questionIds = [
+            ...new Set(
+                selectedAnswers.map(
+                    i => i.answer_banks.question_id,
+                ),
+            ),
+        ];
+
+        // lấy đáp án, điểm của câu hỏi
+        const questions = await this.prisma.question_banks.findMany({
+            where: {
+                question_id: { in: questionIds },
+            },
+            select: {
+                question_id: true,
+                q_type: true,
+                
+                answer_banks: {
+                    select: {
+                        answer_id: true,
+                        is_correct: true,
+                    },
+                },
+
+                exam_template_questions: { select: { score: true },},
+            },
+        });
+
+        // gom đáp án của sv theo câu hỏi
+        const selectedMap = new Map<number, Set<number>>();
+
+        for (const row of selectedAnswers) {
+            const questionId = row.answer_banks.question_id;
+
+            if (!selectedMap.has(questionId)) {
+                selectedMap.set(questionId, new Set());
+            }
+
+            selectedMap.get(questionId)!.add(row.answer_id);
+        }
+
+        let totalScore = 0.00;
+
+        for (const question of questions) {
+            // lấy toàn bộ đáp án của 1 câu hỏi sv chọn để xét
+            const selectedIds = 
+                selectedMap.get(question.question_id) ?? 
+                new Set<number>;
+
+            // lấy (các) đáp đúng của câu hỏi đó
+            const correctIds = new Set(
+                question.answer_banks
+                    .filter(a => a.is_correct)
+                    .map(a => a.answer_id),
+            );
+
+            let isCorrect = true;
+
+            if (selectedIds.size !== correctIds.size) {
+                // khác số lượng với đáp án đúng -> sai
+                // dùng cho câu hỏi nhiều đáp án đúng
+                isCorrect = false;
+            } else {
+                // xét từng đáp án nếu đã cùng số lượng
+                // dùng cho cả câu hỏi 1 và nhiều đáp án đúng
+                for (const answerId of correctIds) {
+                    if (!selectedIds.has(answerId)) {
+                        // nếu trong các câu hỏi đã chọn không có đáp án đúng
+                        // trả về sai
+                        isCorrect = false;
+                        break;
+                    }
+                }
+            }
+
+            if (isCorrect) {
+                totalScore += Number(
+                    question.exam_template_questions[0].score,
+                );
+            }
+        }
+
+        return await this.prisma.student_attempts.update({
+            where: {
+                attempt_id: attemptId,
+            },
+            data: {
+                total_score: totalScore,
+                attempt_status: AttemptStatus.GRADED,
+            },
+        });
+    }
+
+    // lấy lại bài đang làm
+    async getCurrent(
+        studentId: number,
+    ) {
+        const attempt = await this.prisma.student_attempts.findFirst({
+            where: {
+                student_id: studentId, 
+                attempt_status: AttemptStatus.INPROGRESS,
+            },
+            select: {
+                attempt_id: true,
+                student_id: true,
+                session_id: true, 
+                attempt_status: true,
+                attempt_no: true,
+                is_retake: true,
+                start_time: true,
+            },
+        });
+
+        if (!attempt)
+            return {
+                message: 'Không có bài thi.',
+            };
+
+        const selectedAnswers = await this.getStudentAnswers(attempt.attempt_id);
+
+        return {
+            attempt,
+            selectedAnswers,
+        };
     }
 
     private selectForStudent = {
         attempt_id: true,
         student_id: true,
         session_id: true,
-        form_id: true,
         attempt_status: true,
         attempt_no: true,
         is_retake: true,
@@ -208,36 +423,84 @@ export class AttemptService {
         role: Role,
         attemptId: number,
     ) {
-        /**
-         * ẩn điểm đối với sv 
-         * khi chưa nộp bài
-         * hoặc khi đã nộp bài nhưng đang diễn ra kỳ thi 
-         * và gv đặt showResult = false
-         */
-        /**
-         * không trả về bài làm khi đang diễn ra kỳ thi
-         * và gv đặt 
-         */
+        let data = await this.prisma.student_attempts.findUnique({
+            where: {
+                attempt_id: attemptId,
+            },
+            include: {
+                exam_sessions: {
+                    select: {
+                        session_status: true,
+                        allow_review: true,
+                        show_result: true,
+                        created_by: true,
+                    },
+                },
+            },
+        });
 
-        /**
-         * xác thực gv/sv
-         */
-
-
+        if (!data)
+            throw new NotFoundException('Không tìm thấy bài làm.');
+        
         switch (role) {
             case Role.ADMIN:
                 break;
 
-            case Role.TEACHER:
-                await this.validateTeacherOwnership(userId, attemptId);
+            case Role.TEACHER:                
+                if (userId !== data.exam_sessions.created_by)
+                    throw new ForbiddenException('Không được phép xem hoặc bài làm không tồn tại.');
                 break;
-
+                
             case Role.STUDENT:
+                if (userId !== data.student_id)
+                    throw new ForbiddenException('Không được phép xem hoặc bài làm không tồn tại.');
                 break;
 
             default:
                 break;
         }
+                    
+        /**
+         * không trả về bài làm khi đã nộp bài (SUBMITTED | TIMEOUT)
+         * và gv đặt allowReview = false
+         */
+        const denyReview = 
+            (data.attempt_status === AttemptStatus.SUBMITTED
+                || data.attempt_status === AttemptStatus.TIMEOUT
+            ) && !data.exam_sessions.allow_review;
+        
+        if (denyReview)
+            throw new BadRequestException('không cho phép xem bài làm.');
+
+        /**
+         * ẩn điểm đối với sv 
+         * khi chưa được chấm (!GRADED)
+         * hoặc (khi đã được chám nhưng đang diễn ra kỳ thi (!FINISHED)
+         * và gv đặt showResult = false)
+         */
+
+        const canViewScore = 
+            data.attempt_status === AttemptStatus.GRADED &&
+            (
+                data.exam_sessions.session_status === SessionStatus.FINISHED ||
+                data.exam_sessions.show_result
+            );
+
+        const {
+            exam_sessions,
+            total_score,
+            ...attemptData
+        } = data ;
+
+        const attempt = canViewScore ? 
+            {...attemptData, total_score } : attemptData;
+
+        const selectedAnswers = await this.getStudentAnswers(attemptId);
+
+        return {
+            attempt,
+            selectedAnswers,
+        };
     }
     
     async getMany(
@@ -252,29 +515,36 @@ export class AttemptService {
             sessionId,
             isRetake,
             status,
+            classId,
         } = query;
 
-        /**
-         * ẩn điểm đối với sv 
-         * khi chưa nộp bài
-         * hoặc khi đã nộp bài nhưng đang diễn ra kỳ thi 
-         * và gv đặt showResult = false
-         */
-        /**
-         * không trả về bài làm khi đang diễn ra kỳ thi
-         * và gv đặt 
-         */
-
-
         let where = {};
-        const select = (role === Role.STUDENT) ? this.selectForStudent : undefined;
 
         switch (role) {
             case Role.TEACHER:
-                
+                if (!!classId)
+                    await this.classService.validateTeacherOwnerShip(userId, classId);
+
+                where = {
+                    ...(studentId && { student_id: studentId }),
+                    ...(sessionId && { session_id: sessionId }),
+                    ...(isRetake !== undefined && { is_retake: isRetake }),
+                    ...(status && 
+                        status !== AttemptStatus.INPROGRESS && 
+                        { attempt_status: status }),
+                    ...(classId && { users: { 
+                        student_class: { some: {class_id: classId,},},
+                    }}),
+                };
                 break;
 
             case Role.STUDENT:
+                where = {                    
+                    student_id: userId,
+                    ...(sessionId && { session_id: sessionId }),
+                    ...(isRetake !== undefined && { is_retake: isRetake }),
+                    ...(status && { attempt_status: status }),
+                };
                 break;
 
             default:
@@ -284,7 +554,6 @@ export class AttemptService {
         const [data, total] = await this.prisma.$transaction([
             this.prisma.student_attempts.findMany({
                 where,
-                select,
                 skip: (page - 1) * limit,
                 take: limit,
                 orderBy: {
@@ -306,9 +575,16 @@ export class AttemptService {
         };
     }
 
-    async getAnswers(
-
+    async getStudentAnswers(
+        attemptId: number,
     ) {
-
+        return await this.prisma.student_attempt_answers.findMany({
+            where: {
+                attempt_id: attemptId,
+            },
+            select: {
+                answer_id: true,
+            },
+        });
     }
 }
