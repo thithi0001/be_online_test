@@ -1,7 +1,7 @@
 import { PaginationResponseDto } from "@/common/dtos/pagination-response.dto";
 import { SessionStatus } from "@/common/enums/statuses.enum";
 import { Expose, Type } from "class-transformer";
-import { IsDate, IsInt, IsOptional, IsString, Min } from "class-validator";
+import { IsDate, IsEnum, IsInt, IsOptional, IsString, Min } from "class-validator";
 
 export class ExamSessionResponseDto {
     @Expose({name: 'session_id'})
@@ -59,20 +59,21 @@ export class QuerySessionDto {
     @Type(() => Number)
     @IsInt()
     @Min(1)
-    page?: number
+    page?: number;
 
     @IsOptional()
     @Type(() => Number)
     @IsInt()
     @Min(1)
-    limit?: number
+    limit?: number;
     
     @IsOptional()
     @Type(() => Number)
     @IsInt()
-    createdBy?: number
+    createdBy?: number;
     
     @IsOptional()
+    @IsEnum(SessionStatus)
     status?: SessionStatus;
     
     @IsOptional()
