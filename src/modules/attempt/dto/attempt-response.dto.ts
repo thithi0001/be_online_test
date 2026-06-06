@@ -80,7 +80,6 @@ export class QueryAttemptDto {
     sessionId?: number;
     
     @IsOptional()
-    @Type(() => Number)
     @IsBoolean()
     isRetake?: boolean;
     
