@@ -64,7 +64,7 @@ export class TemplateController {
         return this.templateService.delete(user.userId, id);
     }
 
-    @Get(':id')
+    @Get(':id/quetions')
     @Roles(Role.TEACHER, Role.STUDENT)
     @Serialize(TemplateQuestionArrayResponseDto)
     getQuestions(

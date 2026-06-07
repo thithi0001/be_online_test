@@ -54,7 +54,7 @@ export class RetakeController {
         return this.retakeService.rejectRetake(user.userId, id);
     }
 
-    @Post(':id/permissions')
+    @Post(':id/grant')
     @Roles(Role.TEACHER)
     @Serialize(PermissionResponseDto)
     grantPermission(

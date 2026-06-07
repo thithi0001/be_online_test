@@ -233,7 +233,7 @@ export class ExamSessionService {
                 template_id: dto.templateId,
                 session_name: dto.sessionName,
                 duration: dto.duration,
-                shuffle_question: dto.shuffleQuestions,
+                shuffle_questions: dto.shuffleQuestions,
                 shuffle_answers: dto.shuffleAnswers,
                 auto_submit: dto.autoSubmit,
                 allow_review: dto.allowReview,

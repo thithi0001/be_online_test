@@ -57,7 +57,7 @@ export class AttemptController {
         );
     }
 
-    @Patch(':id/submit')
+    @Patch(':id/grade')
     @Serialize(AttemptResponseDto)
     grade(
         @Param('id', ParseIntPipe) id: number,
