@@ -50,6 +50,7 @@ export class QueryNotificationDto {
 
     @IsOptional()
     @IsBoolean()
+    @Transform(({ value }) => value === 'true')
     isRead?: boolean;
 }
 

@@ -1,6 +1,6 @@
 import { PaginationMetaDto, PaginationResponseDto } from "@/common/dtos/pagination-response.dto";
 import { AttemptStatus } from "@/common/enums/statuses.enum";
-import { Expose, Type } from "class-transformer";
+import { Expose, Transform, Type } from "class-transformer";
 import { IsBoolean, IsEnum, IsInt, IsOptional, Min } from "class-validator";
 
 export class AttemptResponseDto {
@@ -89,6 +89,7 @@ export class QueryAttemptDto {
     
     @IsOptional()
     @IsBoolean()
+    @Transform(({ value }) => value === 'true')
     isRetake?: boolean;
     
     @IsOptional()
