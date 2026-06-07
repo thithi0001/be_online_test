@@ -249,9 +249,17 @@ export class AttemptService {
         // nếu hết giờ, hệ thống tự động nộp -> TIMEOUT
         status: AttemptStatus.SUBMITTED | AttemptStatus.TIMEOUT,
     ) {
+        const attempt = await this.prisma.student_attempts.findUnique({
+            where: { attempt_id: attemptId },
+            select: { attempt_status: true },
+        });
+
+        if (attempt?.attempt_status !== AttemptStatus.INPROGRESS )
+            return attempt;
+        
         await this.update(studentId, attemptId, newAnswerIds, deleteAnswerIds);
 
-        const attempt = await this.prisma.student_attempts.update({
+        const submited = await this.prisma.student_attempts.update({
             where: {
                 attempt_id: attemptId,
             },
@@ -269,9 +277,9 @@ export class AttemptService {
             [studentId],
         );
 
-        await this.grade(attempt.attempt_id);
+        await this.grade(submited.attempt_id);
 
-        return attempt;
+        return submited;
     }
 
     /** 
