@@ -344,8 +344,16 @@ export class ExamSessionService {
         } = query;
 
         let where = {};
-        const select = (role === Role.STUDENT) ? 
-            this.selectForStudent : undefined;
+        const include = {
+            exam_session_class: {
+                select: { classes: { omit: { teacher_id: true } } },
+            },
+        };
+
+        const select = (role === Role.STUDENT) ? {
+            ...this.selectForStudent,
+            exam_session_class: include.exam_session_class,
+        } : undefined;
 
         switch(role) {
             case Role.TEACHER:
@@ -394,23 +402,21 @@ export class ExamSessionService {
                 };
                 break;
         }
-
+        
         const [data, total] = await this.prisma.$transaction([
             this.prisma.exam_sessions.findMany({
                 where,
                 ...(select && { select }),
                 skip: (page - 1) * limit,
                 take: limit,
-                orderBy: { 
-                    start_time: 'desc',
-                    session_name: 'asc',
-                },
-                omit: { session_password: true },
-                include: {
-                    exam_session_class: {
-                        select: { classes: { omit: { teacher_id: true },},},
-                    },
-                },
+                orderBy: [
+                    { start_time: 'desc' },
+                    { session_name: 'asc' },
+                ],
+                ...(select ? {} : {
+                    omit: { session_password: true },
+                    include,
+                }),
             }),
 
             this.prisma.exam_sessions.count({ where }),
