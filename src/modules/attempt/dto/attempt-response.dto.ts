@@ -1,4 +1,4 @@
-import { PaginationResponseDto } from "@/common/dtos/pagination-response.dto";
+import { PaginationMetaDto, PaginationResponseDto } from "@/common/dtos/pagination-response.dto";
 import { AttemptStatus } from "@/common/enums/statuses.enum";
 import { Expose, Type } from "class-transformer";
 import { IsBoolean, IsEnum, IsInt, IsOptional, Min } from "class-validator";
@@ -54,7 +54,15 @@ export class AttemptWithAnswerResponseDto {
 }
 
 export class PaginatedAttemptDto 
-    extends PaginationResponseDto<AttemptResponseDto> {}
+{
+    @Expose()
+    @Type(() => AttemptResponseDto)
+    data: AttemptResponseDto[];
+
+    @Expose()
+    @Type(() => PaginationMetaDto)
+    pagination: PaginationMetaDto;
+}
 
 export class QueryAttemptDto {
     @IsOptional()

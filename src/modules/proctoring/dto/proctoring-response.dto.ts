@@ -1,4 +1,4 @@
-import { PaginationResponseDto } from "@/common/dtos/pagination-response.dto";
+import { PaginationMetaDto, PaginationResponseDto } from "@/common/dtos/pagination-response.dto";
 import { EventType } from "@/common/enums/event-type.enum";
 import { Expose, Transform, Type } from "class-transformer";
 import { IsOptional, IsInt, Min, IsEnum } from "class-validator";
@@ -25,8 +25,16 @@ export class ProctoringEventResponseDto {
 }
 
 export class PaginatedEventDto 
-    extends PaginationResponseDto<ProctoringEventResponseDto> {}
+{
+    @Expose()
+    @Type(() => ProctoringEventResponseDto)
+    data: ProctoringEventResponseDto[];
 
+    @Expose()
+    @Type(() => PaginationMetaDto)
+    pagination: PaginationMetaDto;
+}
+    
 export class QueryEventDto {
     @IsOptional()
     @Type(() => Number)

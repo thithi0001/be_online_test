@@ -1,4 +1,4 @@
-import { PaginationResponseDto } from "@/common/dtos/pagination-response.dto";
+import { PaginationMetaDto, PaginationResponseDto } from "@/common/dtos/pagination-response.dto";
 import { PartialType } from "@nestjs/swagger";
 import { Expose, Transform, Type } from "class-transformer";
 import { IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, Min } from "class-validator";
@@ -29,13 +29,21 @@ export class SubjectResponseDto {
     subjectName: string;
 
     @Expose()
-    @Transform(({obj}) => obj._count.question_banks)
+    @Transform(({obj}) => obj?._count?.question_banks ?? 0)
     numberOfQuestions?: number;
 }
 
 export class PaginatedSubjectDto 
-    extends PaginationResponseDto<SubjectResponseDto> {}
+{
+    @Expose()
+    @Type(() => SubjectResponseDto)
+    data: SubjectResponseDto[];
 
+    @Expose()
+    @Type(() => PaginationMetaDto)
+    pagination: PaginationMetaDto;
+}
+    
 export class QuerySubjectDto {
     @IsOptional()
     @IsString()

@@ -19,10 +19,9 @@ export class AttemptController {
     @Serialize(AttemptResponseDto)
     create(
         @CurrentUser() user: any,
-        @Body() sessionPassword: string,
         @Body() dto: CreateAttemptDto,
     ) {
-        return this.attemptService.create(user.userId, sessionPassword, dto);
+        return this.attemptService.create(user.userId, dto);
     }
 
     @Patch(':id')

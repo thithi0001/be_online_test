@@ -1,4 +1,4 @@
-import { PaginationResponseDto } from "@/common/dtos/pagination-response.dto";
+import { PaginationMetaDto, PaginationResponseDto } from "@/common/dtos/pagination-response.dto";
 import { RetakeStatus } from "@/common/enums/statuses.enum";
 import { Expose, Type } from "class-transformer";
 import { IsOptional, IsInt, Min, IsEnum } from "class-validator";
@@ -24,8 +24,16 @@ export class RetakeResponseDto {
 }
 
 export class PaginatedRetakeDto 
-    extends PaginationResponseDto<RetakeResponseDto> {}
+{
+    @Expose()
+    @Type(() => RetakeResponseDto)
+    data: RetakeResponseDto[];
 
+    @Expose()
+    @Type(() => PaginationMetaDto)
+    pagination: PaginationMetaDto;
+}
+    
 export class QueryRetakeDto {
     @IsOptional()
     @Type(() => Number)
@@ -78,8 +86,16 @@ export class PermissionResponseDto {
 }
 
 export class PaginatedPermissionDto 
-    extends PaginationResponseDto<PermissionResponseDto> {}
+{
+    @Expose()
+    @Type(() => PermissionResponseDto)
+    data: PermissionResponseDto[];
 
+    @Expose()
+    @Type(() => PaginationMetaDto)
+    pagination: PaginationMetaDto;
+}
+    
 export class QueryPermissionDto {
     @IsOptional()
     @Type(() => Number)

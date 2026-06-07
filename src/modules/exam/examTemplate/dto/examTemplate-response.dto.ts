@@ -1,4 +1,4 @@
-import { PaginationResponseDto } from "@/common/dtos/pagination-response.dto";
+import { PaginationMetaDto, PaginationResponseDto } from "@/common/dtos/pagination-response.dto";
 import { QuestionType } from "@/common/enums/questionType.enum";
 import { Expose, Transform, Type } from "class-transformer";
 import { IsInt, IsOptional, IsString, Min } from "class-validator";
@@ -22,13 +22,21 @@ export class ExamTemplateResponseDto {
     isActive: boolean;
 
     @Expose()
-    @Transform(({obj}) => obj._count.exam_template_questions)
+    @Transform(({obj}) => obj?._count?.exam_template_questions ?? 0)
     numberOfQuestions?: number;
 }
 
 export class PaginatedTemplateDto
-    extends PaginationResponseDto<ExamTemplateResponseDto> {}
+{
+    @Expose()
+    @Type(() => ExamTemplateResponseDto)
+    data: ExamTemplateResponseDto[];
 
+    @Expose()
+    @Type(() => PaginationMetaDto)
+    pagination: PaginationMetaDto;
+}
+    
 export class QueryTemplateDto {
     @IsOptional()
     @IsString()

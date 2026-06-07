@@ -1,4 +1,4 @@
-import { PaginationResponseDto } from "@/common/dtos/pagination-response.dto";
+import { PaginationMetaDto, PaginationResponseDto } from "@/common/dtos/pagination-response.dto";
 import { Expose, Transform, Type } from "class-transformer";
 import { IsOptional, IsString, IsInt, Min, IsBoolean } from "class-validator";
 
@@ -21,8 +21,16 @@ export class NotificationResponseDto {
 }
 
 export class PaginatedNotificationDto
-    extends PaginationResponseDto<NotificationResponseDto> {}
+{
+    @Expose()
+    @Type(() => NotificationResponseDto)
+    data: NotificationResponseDto[];
 
+    @Expose()
+    @Type(() => PaginationMetaDto)
+    pagination: PaginationMetaDto;
+}
+    
 export class QueryNotificationDto {
     @IsOptional()
     @IsString()

@@ -6,7 +6,6 @@
    - Nhiệm vụ: Tạo attempt mới cho học sinh
    - Input:
      - `@CurrentUser() user`
-     - `@Body() sessionPassword: string`
      - `@Body() dto: CreateAttemptDto`
    - Output: `AttemptResponseDto`
 
@@ -118,7 +117,7 @@
    - Input:
      - `@CurrentUser() user`
      - `@Param('id', ParseIntPipe) id: number`
-     - `@Body() newClassName: string`
+     - `@Body() body: any` (`newClassname`)
    - Output: `ClassRespsonseDto`
 
 5. `POST /classes/:id`
@@ -418,7 +417,7 @@
    - Nhiệm vụ: Tạo môn học
    - Input:
      - `@CurrentUser() user`
-     - `@Body() subjectName: string`
+     - `@Body() body: any` (`subjectName`)
    - Output: `SubjectResponseDto`
 
 2. `GET /subjects`
@@ -443,7 +442,7 @@
    - Input:
      - `@CurrentUser() user`
      - `@Param('id', ParseIntPipe) id: number`
-     - `@Body() newSubjectName: string`
+     - `@Body() body: any` (`newSubjectName`)
    - Output: `SubjectResponseDto`
 
 ---

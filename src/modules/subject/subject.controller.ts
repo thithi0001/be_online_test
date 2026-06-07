@@ -18,13 +18,13 @@ export class SubjectController {
     @Serialize(SubjectResponseDto)
     create(
         @CurrentUser() user: any,
-        @Body() subjectName: string,
+        @Body() body: any,
     ) {
-        if (!subjectName) {
+        if (!body.subjectName) {
             throw new BadRequestException('Tên môn học không được để trống.');
         }
 
-        return this.subjectService.create(user.userId, subjectName);
+        return this.subjectService.create(user.userId, body.subjectName);
     }
 
     @Get()
@@ -53,12 +53,12 @@ export class SubjectController {
     update(
         @CurrentUser() user: any,
         @Param('id', ParseIntPipe) id: number,
-        @Body() newSubjectName: string,
+        @Body() body: any,
     ) {
-        if (!newSubjectName) {
+        if (!body.newSubjectName) {
             throw new BadRequestException('Tên môn học không được để trống.');
         }
 
-        return this.subjectService.update(user.userId, id, newSubjectName);
+        return this.subjectService.update(user.userId, id, body.newSubjectName);
     }
 }

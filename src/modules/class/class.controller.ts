@@ -53,13 +53,13 @@ export class ClassController {
     update(
         @CurrentUser() user: any,
         @Param('id', ParseIntPipe) id: number,
-        @Body() newClassName: string,
+        @Body() body: any
     ) {
-        if (!newClassName) {
+        if (!body.newClassName) {
             throw new BadRequestException('Tên lớp không được để trống.');
         }
 
-        return this.classService.update(user.userId, id, newClassName);
+        return this.classService.update(user.userId, id, body.newClassName);
     }
 
     // thêm 1 sinh viên

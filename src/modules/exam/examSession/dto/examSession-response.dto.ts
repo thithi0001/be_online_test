@@ -1,4 +1,4 @@
-import { PaginationResponseDto } from "@/common/dtos/pagination-response.dto";
+import { PaginationMetaDto, PaginationResponseDto } from "@/common/dtos/pagination-response.dto";
 import { SessionStatus } from "@/common/enums/statuses.enum";
 import { Expose, Transform, Type } from "class-transformer";
 import { IsDate, IsEnum, IsInt, IsOptional, IsString, Min } from "class-validator";
@@ -61,8 +61,16 @@ class ClassInfo {
     className: string;
 }
 
-export class PaginatedSessionDto
-    extends PaginationResponseDto<ExamSessionResponseDto> {}
+export class PaginatedSessionDto 
+{
+    @Expose()
+    @Type(() => ExamSessionResponseDto)
+    data: ExamSessionResponseDto[];
+
+    @Expose()
+    @Type(() => PaginationMetaDto)
+    pagination: PaginationMetaDto;
+}
 
 export class QuerySessionDto {
     @IsOptional()

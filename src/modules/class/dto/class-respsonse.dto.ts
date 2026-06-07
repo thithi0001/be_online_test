@@ -1,4 +1,4 @@
-import { PaginationResponseDto } from "@/common/dtos/pagination-response.dto";
+import { PaginationMetaDto, PaginationResponseDto } from "@/common/dtos/pagination-response.dto";
 import { Expose, Transform, Type } from "class-transformer";
 import { IsInt, IsOptional, IsString, Min } from "class-validator";
 
@@ -13,13 +13,21 @@ export class ClassRespsonseDto {
     className: string;
 
     @Expose()
-    @Transform(({obj}) => obj._count.student_class)
+    @Transform(({obj}) => obj?._count?.student_class ?? 0)
     numberOfStudents?: number;
 }
 
 export class PaginatedClassDto
-    extends PaginationResponseDto<ClassRespsonseDto> {}
+{
+    @Expose()
+    @Type(() => ClassRespsonseDto)
+    data: ClassRespsonseDto[];
 
+    @Expose()
+    @Type(() => PaginationMetaDto)
+    pagination: PaginationMetaDto;
+}
+    
 export class QueryClassDto {
     @IsOptional()
     @IsString()

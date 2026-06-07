@@ -1,5 +1,5 @@
 import { PartialType } from "@nestjs/swagger";
-import { IsInt, IsIP, IsNotEmpty, IsObject} from "class-validator";
+import { IsInt, IsIP, IsNotEmpty, IsObject, IsString} from "class-validator";
 
 export class CreateAttemptDto {
     @IsInt()
@@ -17,6 +17,10 @@ export class CreateAttemptDto {
     @IsObject()
     @IsNotEmpty()
     deviceInfo: Record<string, any>;
+
+    @IsString()
+    @IsNotEmpty()
+    sessionPassword: string;
 }
 
 export class UpdateAttemptDto 

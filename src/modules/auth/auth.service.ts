@@ -63,7 +63,6 @@ export class AuthService {
          * input
          * role
          * user's information
-         * student code if is student
          * password
          */
 

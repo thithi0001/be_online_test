@@ -180,7 +180,6 @@ export class AttemptService {
 
     async create(
         studentId: number,
-        sessionPassword: string,
         dto: CreateAttemptDto,
     ) {
         /**
@@ -196,7 +195,7 @@ export class AttemptService {
          */
 
         const { attemptNo, isRetake } = await this
-            .validateAttemptEligibility(studentId, dto.sessionId, sessionPassword);
+            .validateAttemptEligibility(studentId, dto.sessionId, dto.sessionPassword);
         
         return await this.prisma.student_attempts.create({
             data: {

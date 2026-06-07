@@ -1,4 +1,4 @@
-import { PaginationResponseDto } from '@/common/dtos/pagination-response.dto';
+import { PaginationMetaDto, PaginationResponseDto } from '@/common/dtos/pagination-response.dto';
 import { Role } from '@/common/enums/role.enum';
 import { Expose, Type } from 'class-transformer';
 import { IsInt, IsOptional, IsString, Min } from 'class-validator';
@@ -18,8 +18,16 @@ export class UserResponseDto {
 }
 
 export class PaginatedUserDto 
-    extends PaginationResponseDto<UserResponseDto> {}
+{
+    @Expose()
+    @Type(() => UserResponseDto)
+    data: UserResponseDto[];
 
+    @Expose()
+    @Type(() => PaginationMetaDto)
+    pagination: PaginationMetaDto;
+}
+    
 export class QueryUserDto {
     @IsOptional()
     @IsString()

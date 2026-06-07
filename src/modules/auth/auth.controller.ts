@@ -9,21 +9,21 @@ export class AuthController {
 
     @Post('login')
     login(@Body() dto: LoginDto) {
-        return this.authService.login(dto)
+        return this.authService.login(dto);
     }
 
     @Post('register')
     register(@Body() dto: RegisterDto) {
-        return this.authService.register(dto)
+        return this.authService.register(dto);
     }
 
     @Post('password-reset-requests')
     resetPasswordRequest() {
-        return this.authService.resetPasswordRequest()
+        return this.authService.resetPasswordRequest();
     }
 
     @Post('password-resets')
     resetPassword() {
-        return this.authService.resetPassword()
+        return this.authService.resetPassword();
     }
 }

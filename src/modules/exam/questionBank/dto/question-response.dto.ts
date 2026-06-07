@@ -1,4 +1,4 @@
-import { PaginationResponseDto } from "@/common/dtos/pagination-response.dto";
+import { PaginationMetaDto, PaginationResponseDto } from "@/common/dtos/pagination-response.dto";
 import { QuestionType } from "@/common/enums/questionType.enum";
 import { Expose, Type } from "class-transformer";
 import { IsEnum, IsInt, IsOptional, IsString, Min } from "class-validator";
@@ -44,9 +44,17 @@ export class QuestionResponseDto {
     answers: AnswerResponseDto[];
 }
 
-export class PaginatedQuestionDto
-    extends PaginationResponseDto<QuestionResponseDto> {}
+export class PaginatedQuestionDto 
+{
+    @Expose()
+    @Type(() => QuestionResponseDto)
+    data: QuestionResponseDto[];
 
+    @Expose()
+    @Type(() => PaginationMetaDto)
+    pagination: PaginationMetaDto;
+}
+    
 export class QueryQuestionDto {
     @IsOptional()
     @IsString()
