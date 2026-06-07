@@ -14,12 +14,16 @@ import { AttemptModule } from "./modules/attempt/attempt.module";
 import { ProctoringModule } from "./modules/proctoring/proctoring.module";
 import { RetakeModule } from "./modules/retake/retake.module";
 import { NotificationModule } from "./modules/notification/notification.module";
+import { ScheduleModule } from "@nestjs/schedule";
+import { SchedulerModule } from "./modules/scheduler/scheduler.module";
 
 @Module({
     imports: [
         ConfigModule.forRoot({
             isGlobal: true,
         }),
+        ScheduleModule.forRoot(),
+        SchedulerModule,
         PrismaModule,
         AuthModule,
         UserModule,
