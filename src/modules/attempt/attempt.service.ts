@@ -7,6 +7,7 @@ import { ExamSessionService } from "../exam/examSession/examSession.service";
 import { AttemptStatus, SessionStatus } from "@/common/enums/statuses.enum";
 import { randomBytes } from "crypto";
 import { ClassService } from "../class/class.service";
+import { NotificationService } from "../notification/notification.service";
 
 @Injectable()
 export class AttemptService {
@@ -14,6 +15,7 @@ export class AttemptService {
         private prisma: PrismaService,
         private examSessionService: ExamSessionService,
         private classService: ClassService,
+        private notiService: NotificationService,
     ) {}
     
     async validateTeacherOwnership(
@@ -250,7 +252,7 @@ export class AttemptService {
     ) {
         await this.update(studentId, attemptId, newAnswerIds, deleteAnswerIds);
 
-        return await this.prisma.student_attempts.update({
+        const attempt = await this.prisma.student_attempts.update({
             where: {
                 attempt_id: attemptId,
             },
@@ -259,6 +261,16 @@ export class AttemptService {
                 attempt_status: status,
             },
         });
+
+        await this.notiService.create(
+            {
+                content: `Bài làm của bạn đã được nộp.`,
+                createdBy: studentId,
+            },
+            [studentId],
+        );
+
+        return attempt;
     }
 
     /** 

@@ -52,7 +52,7 @@ export class CreateExamSessionDto {
 
     @IsArray()
     @IsInt({ each: true })
-    classIds?: number[];
+    classIds: number[];
 }
 
 export class UpdateExamSessionDto 

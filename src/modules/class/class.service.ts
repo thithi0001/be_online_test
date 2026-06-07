@@ -4,6 +4,8 @@ import { CreateClassDto, ImportStudentDto } from "./dto/class.dto";
 import { Role } from "@/common/enums/role.enum";
 import { QueryClassDto } from "./dto/class-respsonse.dto";
 import { QueryUserDto } from "../user/dto/user-response.dto";
+import { NotificationService } from "../notification/notification.service";
+import { UserService } from "../user/users.service";
 
 @Injectable()
 export class ClassService {
@@ -16,6 +18,8 @@ export class ClassService {
 
     constructor(
         private prisma: PrismaService,
+        private notiService: NotificationService,
+        private userService: UserService,
     ) {}
 
     async validateTeacherOwnerShip(
@@ -161,12 +165,25 @@ export class ClassService {
         if (student.role !== Role.STUDENT) 
             throw new BadRequestException('Người dùng không phải sinh viên.');
             
-        return await this.prisma.student_class.create({
+        const data = await this.prisma.student_class.create({
             data: {
                 class_id: classId,
                 student_id: student.user_id,
             },
+            include: {
+                classes: { select: { class_name: true },},
+            },
         });
+
+        await this.notiService.create(
+            {
+                content: `Bạn đã được thêm vào lớp ${data.classes.class_name}.`,
+                createdBy: teacherId,
+            },
+            [student.user_id],
+        );
+
+        return student;
     }
 
     async addStudents(
@@ -175,7 +192,7 @@ export class ClassService {
         // danh sách đã được lọc
         dtos: ImportStudentDto[],
     ) {
-        await this.validateTeacherOwnerShip(teacherId, classId);
+        const _class = await this.validateAndReturnForTeacher(teacherId, classId);
 
         const { studentIds, invitedEmails } = await this.resolveStudents(dtos.map(dto => dto.email));
 
@@ -187,12 +204,22 @@ export class ClassService {
             })),
         });
 
-        return await this.prisma.student_class.createMany({
+        await this.prisma.student_class.createMany({
             data: studentIds.map((id) => ({
                 class_id: classId,
                 student_id: id,
             })),
         });
+
+        await this.notiService.create(
+            {
+                content: `Bạn đã được thêm vào lớp ${_class.class_name}.`,
+                createdBy: teacherId,
+            },
+            studentIds,
+        );
+
+        return await this.userService.getMany(studentIds, {});
     }
 
     async resolveStudents(

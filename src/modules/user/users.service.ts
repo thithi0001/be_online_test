@@ -90,9 +90,13 @@ export class UserService {
 
     async getMany(
         ids: number[],
-        query: QueryUserDto
+        query: QueryUserDto,
     ) {
-        const {keyword, page = 1, limit = 10} = query;
+        const {
+            keyword, 
+            page = 1, 
+            limit = 10
+        } = query;
 
         const where = {
             user_id: { in: ids },

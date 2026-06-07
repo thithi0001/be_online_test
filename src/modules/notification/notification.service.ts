@@ -1,5 +1,7 @@
 import { PrismaService } from "@/prisma/prisma.service";
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import { CreateNotiDto } from "./dto/notification.dto";
+import { QueryNotificationDto } from "./dto/notification-response.dto";
 
 @Injectable()
 export class NotificationService {
@@ -42,7 +44,7 @@ export class NotificationService {
 
     // hệ thống tạo
     async create(
-        dto: any,
+        dto: CreateNotiDto,
         userIds: number[],
     ) {
         return await this.prisma.$transaction([
@@ -80,6 +82,17 @@ export class NotificationService {
         };
     }
 
+    async countUnread(
+        userId: number,
+    ) {
+        return await this.prisma.noti_users.count({
+            where: {
+                user_id: userId,
+                is_read: false,
+            },
+        });
+    }
+
     async getById(
         userId: number,
         notiId: number,
@@ -89,7 +102,7 @@ export class NotificationService {
 
     async getMany(
         userId: number,
-        query: any,
+        query: QueryNotificationDto,
     ) {
         const {
             keyword,

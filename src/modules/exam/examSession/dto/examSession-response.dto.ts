@@ -1,6 +1,6 @@
 import { PaginationResponseDto } from "@/common/dtos/pagination-response.dto";
 import { SessionStatus } from "@/common/enums/statuses.enum";
-import { Expose, Type } from "class-transformer";
+import { Expose, Transform, Type } from "class-transformer";
 import { IsDate, IsEnum, IsInt, IsOptional, IsString, Min } from "class-validator";
 
 export class ExamSessionResponseDto {
@@ -45,6 +45,20 @@ export class ExamSessionResponseDto {
 
     @Expose({name: 'session_status'})
     sessionStatus: SessionStatus;
+
+    @Expose()
+    @Type(() => ClassInfo)
+    @Transform(({obj}) => 
+        obj.exam_session_class.map(i => i.classes))
+    classesInfo?: ClassInfo[];
+}
+
+class ClassInfo {
+    @Expose({name: 'class_id'})
+    classId: number;
+
+    @Expose({name: 'class_name'})
+    className: string;
 }
 
 export class PaginatedSessionDto

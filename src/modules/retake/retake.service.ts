@@ -7,6 +7,7 @@ import { Role } from "@/common/enums/role.enum";
 import { RetakeStatus } from "@/common/enums/statuses.enum";
 import { CreateRetakeDto, CreatePermissionDto } from "./dto/retake.dto";
 import { QueryPermissionDto, QueryRetakeDto } from "./dto/retake-response.dto";
+import { NotificationService } from "../notification/notification.service";
 
 @Injectable()
 export class RetakeService {
@@ -14,6 +15,7 @@ export class RetakeService {
         private prisma: PrismaService,
         private examSessionService: ExamSessionService,
         private attemptService: AttemptService,
+        private notiService: NotificationService,
     ) {}
 
     async validateTeacherOwnerShip(
@@ -206,13 +208,33 @@ export class RetakeService {
                 'Chưa đạt giới hạn cho phép làm bài.',
             );
 
-        return await this.prisma.retake_requests.create({
+        const { users, ...retake } = await this.prisma.retake_requests.create({
             data: {
                 student_id: studentId,
                 session_id: dto.sessionId,
                 reason: dto.reason,
             },
+            include: {
+                users: {
+                    select: {
+                        full_name: true,
+                        email: true,
+                    },
+                },
+            },
         });
+
+        await this.notiService.create(
+            {
+                content: `${users.full_name} xin phép làm lại bài thi 
+                    trong kỳ thi ${session.session_name}.\n
+                    Email: ${users.email}`,
+                createdBy: studentId,
+            },
+            [session.created_by],
+        );
+
+        return retake;
     }
 
     async update(
@@ -242,12 +264,10 @@ export class RetakeService {
                 break;
 
             case Role.TEACHER:
-                await this.validateAndReturnForStudent(userId, requestId, 'request');
-                break;
+                return await this.validateAndReturnForTeacher(userId, requestId, 'request');
 
             case Role.STUDENT:
-                await this.validateAndReturnForStudent(userId, requestId, 'request');
-                break;
+                return await this.validateAndReturnForStudent(userId, requestId, 'request');
 
             default:
                 break;
@@ -277,7 +297,7 @@ export class RetakeService {
                     break;
 
                 case Role.STUDENT:
-                    await this.examSessionService.validateAndReturnForStudent(userId, sessionId)    ;
+                    await this.examSessionService.validateStudentOwnership(userId, sessionId)    ;
                     break;
 
                 default:
@@ -321,7 +341,28 @@ export class RetakeService {
     ) {
         await this.validateTeacherOwnerShip(teacherId, requestId, 'request');
 
-        return await this.update(teacherId, requestId, RetakeStatus.REJECTED);
+        const updated = await this.update(teacherId, requestId, RetakeStatus.REJECTED);
+        const session = await this.prisma.exam_sessions.findUnique({
+            where: {
+                session_id: updated.session_id,
+            },
+            select: {
+                session_name: true,
+            },
+        });
+
+        if (!session)
+            throw new BadRequestException('Kỳ thi không tồn tại.');
+
+        await this.notiService.create(
+            {
+                content: `Yêu cầu thi lại trong kỳ thi ${session.session_name} đã bị từ chối.`,
+                createdBy: teacherId,
+            },
+            [updated.student_id],
+        );
+
+        return updated;
     }
 
     // createPermission
@@ -330,13 +371,14 @@ export class RetakeService {
         requestId: number,
         dto: CreatePermissionDto,
     ) {
-        const request = await this.validateAndReturnForTeacher(teacherId, requestId, 'request');
+        const retake = await this.validateAndReturnForTeacher(teacherId, requestId, 'request');
         const session = await this.prisma.exam_sessions.findUnique({
             where: {
-                session_id: request.session_id,
+                session_id: retake.session_id,
             }, 
             select: {
                 attempt_limit: true,
+                session_name: true,
             },
         });
 
@@ -345,7 +387,7 @@ export class RetakeService {
 
         await this.update(teacherId, requestId, RetakeStatus.GRANTED);
 
-        return await this.prisma.retake_permissions.create({
+        const permission = await this.prisma.retake_permissions.create({
             data: {
                 request_id: requestId,
                 created_by: teacherId,
@@ -354,6 +396,17 @@ export class RetakeService {
                 max_attempt: Number(session.attempt_limit) + Number(dto.attemptLimit ?? 0),
             },
         });
+
+        await this.notiService.create(
+            {
+                content: `Yêu cầu thi lại trong kỳ thi ${session.session_name} đã được chấp nhận.\n
+                    Thời gian từ ${permission.available_from} đến ${permission.available_to}.`,
+                createdBy: teacherId,
+            },
+            [retake.student_id],
+        );
+
+        return permission;
     }
 
     async getPermissionById(
@@ -366,12 +419,10 @@ export class RetakeService {
                 break;
 
             case Role.TEACHER:
-                await this.validateAndReturnForStudent(userId, permissionId, 'permission');
-                break;
+                return await this.validateAndReturnForTeacher(userId, permissionId, 'permission');
 
             case Role.STUDENT:
-                await this.validateAndReturnForStudent(userId, permissionId, 'permission');
-                break;
+                return await this.validateAndReturnForStudent(userId, permissionId, 'permission');
 
             default:
                 break;

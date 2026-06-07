@@ -4,12 +4,15 @@ import { BadRequestException, ForbiddenException, Injectable } from "@nestjs/com
 import { CreateExamSessionDto, UpdateExamSessionDto } from "./dto/examSession.dto";
 import { QuerySessionDto } from "./dto/examSession-response.dto";
 import { ExamTemplateService } from "../examTemplate/examTemplate.service";
+import { NotificationService } from "@/modules/notification/notification.service";
+import { SessionStatus } from "@/common/enums/statuses.enum";
 
 @Injectable()
 export class ExamSessionService {
     constructor(
         private prisma: PrismaService,
         private examTemplateService: ExamTemplateService,
+        private notiService: NotificationService,
     ) {}
 
     async validateTeacherOwnership(
@@ -38,6 +41,11 @@ export class ExamSessionService {
             where: {
                 created_by: teacherId,
                 session_id: sessionId,
+            },
+            include: {
+                exam_session_class: {
+                    select: { classes: { omit: { teacher_id: true },},},
+                },
             },
         });
 
@@ -146,7 +154,7 @@ export class ExamSessionService {
          */
         await this.examTemplateService.validateTemplate(dto.templateId);
 
-        return await this.prisma.exam_sessions.create({
+        const session = await this.prisma.exam_sessions.create({
             data: {
                 template_id: dto.templateId,
                 session_name: dto.sessionName,
@@ -162,13 +170,12 @@ export class ExamSessionService {
                 session_password: dto.sessionPassword,
                 session_status: dto.sessionStatus,
                 created_by: teacherId,
-                ...(dto.classIds && {
-                    exam_session_class: {
-                        create: dto.classIds.map(id => ({
-                            class_id: id,
-                        })),
-                    },
-                }),
+                
+                exam_session_class: {
+                    create: dto.classIds.map(id => ({
+                        class_id: id,
+                    })),
+                },
             },
             include: {
                 exam_session_class: {
@@ -176,6 +183,29 @@ export class ExamSessionService {
                 },
             },
         });
+
+        if (session.session_status === SessionStatus.PUBLISHED) {
+            const studentIds = await this.prisma.users.findMany({
+                where: {
+                    student_class: {
+                        some: { class_id: { in: dto.classIds },},
+                    },
+                },
+                select: { user_id: true },
+            });
+
+            await this.notiService.create(
+                {
+                    content: `Kỳ thi ${session.session_name} sẽ 
+                        diễn ra từ ${session.start_time.toString()} 
+                        đến ${session.end_time.toString()} .`,
+                    createdBy: session.created_by,
+                },
+                studentIds.map(i => i.user_id),
+            );
+        }
+
+        return session;
     }
 
     async update(
@@ -185,14 +215,17 @@ export class ExamSessionService {
     ) {
         const session = await this.validateAndReturnForTeacher(teacherId, sessionId);
         // không cho phép sửa khi không còn là nháp nữa
-        if (session.session_status !== 'draft')
+        if (session.session_status !== SessionStatus.DRAFT)
             throw new BadRequestException('Không được phép chỉnh sửa kỳ thi đã công bố.');
         
         // không cho phép dùng đề thi không hợp lệ
         if (!dto.templateId)
             await this.examTemplateService.validateTemplate(Number(dto.templateId));
 
-        return await this.prisma.exam_sessions.update({
+        if (!dto.classIds)
+            throw new BadRequestException('Chưa chọn lớp cho kỳ thi.');
+
+        const updated = await this.prisma.exam_sessions.update({
             where: {
                 session_id: sessionId,
             },
@@ -210,16 +243,43 @@ export class ExamSessionService {
                 attempt_limit: dto.attemptLimit,
                 session_password: dto.sessionPassword,
                 session_status: dto.sessionStatus,
+                
                 exam_session_class: {
                     deleteMany: {},
-                    ...(dto.classIds && {
-                        create: dto.classIds.map(id => ({
-                            class_id: id,
-                        })),
-                    }),
+                    create: dto.classIds.map(id => ({
+                        class_id: id,
+                    })),
+                },
+            },
+            include: {
+                exam_session_class: {
+                    select: { classes: { omit: { teacher_id: true },},},
                 },
             },
         });
+
+        if (updated.session_status === SessionStatus.PUBLISHED) {
+            const studentIds = await this.prisma.users.findMany({
+                where: {
+                    student_class: {
+                        some: { class_id: { in: dto.classIds },},
+                    },
+                },
+                select: { user_id: true },
+            });
+
+            await this.notiService.create(
+                {
+                    content: `Kỳ thi ${updated.session_name} sẽ 
+                        diễn ra từ ${updated.start_time.toString()} 
+                        đến ${updated.end_time.toString()} .`,
+                    createdBy: updated.created_by,
+                },
+                studentIds.map(i => i.user_id),
+            );
+        }
+
+        return updated;
     }
 
     async delete(
@@ -344,6 +404,12 @@ export class ExamSessionService {
                 orderBy: { 
                     start_time: 'desc',
                     session_name: 'asc',
+                },
+                omit: { session_password: true },
+                include: {
+                    exam_session_class: {
+                        select: { classes: { omit: { teacher_id: true },},},
+                    },
                 },
             }),
 

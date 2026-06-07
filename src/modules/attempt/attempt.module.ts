@@ -3,11 +3,13 @@ import { SessionModule } from "../exam/examSession/examSession.module";
 import { ClassModule } from "../class/class.module";
 import { AttemptController } from "./attempt.controller";
 import { AttemptService } from "./attempt.service";
+import { NotificationModule } from "../notification/notification.module";
 
 @Module({
     imports: [
         SessionModule,
         ClassModule,
+        NotificationModule,
     ],
     controllers: [AttemptController],
     providers: [AttemptService],
