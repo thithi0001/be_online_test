@@ -269,6 +269,8 @@ export class AttemptService {
             [studentId],
         );
 
+        await this.grade(attempt.attempt_id);
+
         return attempt;
     }
 

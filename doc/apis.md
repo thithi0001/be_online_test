@@ -39,7 +39,7 @@
    - Nhiệm vụ: Lấy attempt hiện tại của học sinh
    - Input:
      - `@CurrentUser() user`
-   - Output: `AttemptResponseDto`
+   - Output: `AttemptWithAnswerResponseDto`
 
 6. `GET /attempts/:id`
    - Tên: `getById`
@@ -47,7 +47,7 @@
    - Input:
      - `@CurrentUser() user`
      - `@Param('id', ParseIntPipe) id: number`
-   - Output: `AttemptResponseDto`
+   - Output: `AttemptWithAnswerResponseDto`
 
 7. `GET /attempts`
    - Tên: `getMany`

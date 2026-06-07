@@ -5,7 +5,7 @@ import { AttemptService } from "./attempt.service";
 import { Roles } from "@/common/decorators/roles.decorator";
 import { Role } from "@/common/enums/role.enum";
 import { Serialize } from "@/common/decorators/serialize.decorator";
-import { AttemptResponseDto, PaginatedAttemptDto, QueryAttemptDto } from "./dto/attempt-response.dto";
+import { AttemptResponseDto, AttemptWithAnswerResponseDto, PaginatedAttemptDto, QueryAttemptDto } from "./dto/attempt-response.dto";
 import { CurrentUser } from "@/common/decorators/current-user.decorator";
 import { CreateAttemptDto } from "./dto/attempt.dto";
 
@@ -66,7 +66,7 @@ export class AttemptController {
 
     @Get('current')
     @Roles(Role.STUDENT)
-    @Serialize(AttemptResponseDto)
+    @Serialize(AttemptWithAnswerResponseDto)
     getCurrent(
         @CurrentUser() user: any,
     ) {
@@ -75,7 +75,7 @@ export class AttemptController {
 
     @Get(':id')
     @Roles(Role.STUDENT, Role.TEACHER)
-    @Serialize(AttemptResponseDto)
+    @Serialize(AttemptWithAnswerResponseDto)
     getById(
         @CurrentUser() user: any,
         @Param('id', ParseIntPipe) id: number,
