@@ -207,6 +207,7 @@ export class AttemptService {
                 is_retake: isRetake,
                 shuffle_seed: randomBytes(16).toString('hex'),
             },
+            omit: { total_score: true },
         });
     }
     
@@ -267,6 +268,7 @@ export class AttemptService {
                 submit_time: new Date(),
                 attempt_status: status,
             },
+            omit: { total_score: true },
         });
 
         await this.notiService.create(
@@ -384,7 +386,7 @@ export class AttemptService {
             }
         }
 
-        return await this.prisma.student_attempts.update({
+        const graded = await this.prisma.student_attempts.update({
             where: {
                 attempt_id: attemptId,
             },
@@ -393,6 +395,11 @@ export class AttemptService {
                 attempt_status: AttemptStatus.GRADED,
             },
         });
+
+        // return {
+        //     ...graded,
+        //     total_score: graded.total_score?.toString(),
+        // }
     }
 
     // lấy lại bài đang làm
@@ -404,15 +411,7 @@ export class AttemptService {
                 student_id: studentId, 
                 attempt_status: AttemptStatus.INPROGRESS,
             },
-            select: {
-                attempt_id: true,
-                student_id: true,
-                session_id: true, 
-                attempt_status: true,
-                attempt_no: true,
-                is_retake: true,
-                start_time: true,
-            },
+            omit: { total_score: true },
         });
 
         if (!attempt)
@@ -428,17 +427,6 @@ export class AttemptService {
         };
     }
 
-    private selectForStudent = {
-        attempt_id: true,
-        student_id: true,
-        session_id: true,
-        attempt_status: true,
-        attempt_no: true,
-        is_retake: true,
-        start_time: true,
-        submit_time: true,
-    };
-    
     async getById(
         userId: number,
         role: Role,
@@ -564,7 +552,9 @@ export class AttemptService {
                     student_id: userId,
                     ...(sessionId && { session_id: sessionId }),
                     ...(isRetake !== undefined && { is_retake: isRetake }),
-                    ...(status && { attempt_status: status }),
+                    ...(status && 
+                        status !== AttemptStatus.INPROGRESS && 
+                        { attempt_status: status }),
                 };
                 break;
 
@@ -586,7 +576,10 @@ export class AttemptService {
         ]);
 
         return {
-            data,
+            data: data.map(i =>({
+                ...i,
+                total_score: i.total_score?.toString(),
+            })),
             pagination: {
                 total,
                 page,

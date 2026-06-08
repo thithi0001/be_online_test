@@ -35,7 +35,7 @@ export class AttemptResponseDto {
     submitTime?: Date;
 
     @Expose({name: 'total_score'})
-    totalScore?: number;
+    totalScore?: string;
 }
 
 export class SelectedAnswerResponseDto {
