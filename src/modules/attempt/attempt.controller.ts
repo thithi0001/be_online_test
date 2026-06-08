@@ -50,8 +50,6 @@ export class AttemptController {
         return this.attemptService.submit(
             user.userId,
             id,
-            body.newAnswerIds,
-            body.deleteAnswerIds,
             body.status
         );
     }
