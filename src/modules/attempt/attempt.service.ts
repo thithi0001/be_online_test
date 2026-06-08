@@ -225,18 +225,26 @@ export class AttemptService {
          */
         await this.validateStudentOwnership(studentId, attemptId);
 
-        await this.prisma.student_attempt_answers.deleteMany({
-            where: {
-                answer_id: { in: deleteAnswerIds },
-            },
+        await this.prisma.$transaction(async tx => {
+            await tx.student_attempt_answers.deleteMany({
+                where: {
+                    attempt_id: attemptId,
+                    student_attempts: { attempt_status: AttemptStatus.INPROGRESS },
+                    answer_id: { in: deleteAnswerIds },
+                },
+            });
+
+            if (newAnswerIds.length) {
+                await tx.student_attempt_answers.createMany({
+                    data: newAnswerIds.map(id => ({
+                        attempt_id: attemptId,
+                        answer_id: id,
+                    })),
+                });
+            }
         });
 
-        return await this.prisma.student_attempt_answers.createMany({
-            data: newAnswerIds.map(id => ({
-                attempt_id: attemptId,
-                answer_id: id,
-            })),
-        });
+        return await this.getStudentAnswers(attemptId);
     }
 
     async submit(
@@ -250,25 +258,47 @@ export class AttemptService {
         // nếu hết giờ, hệ thống tự động nộp -> TIMEOUT
         status: AttemptStatus.SUBMITTED | AttemptStatus.TIMEOUT,
     ) {
-        const attempt = await this.prisma.student_attempts.findUnique({
-            where: { attempt_id: attemptId },
-            select: { attempt_status: true },
-        });
+        await this.validateStudentOwnership(studentId, attemptId);
 
-        if (attempt?.attempt_status !== AttemptStatus.INPROGRESS )
-            return attempt;
-        
-        await this.update(studentId, attemptId, newAnswerIds, deleteAnswerIds);
+        const submited = await this.prisma.$transaction(async tx => {
+            await tx.student_attempt_answers.deleteMany({
+                where: {
+                    attempt_id: attemptId,
+                    student_attempts: { attempt_status: AttemptStatus.INPROGRESS },
+                    answer_id: { in: deleteAnswerIds },
+                },
+            });
 
-        const submited = await this.prisma.student_attempts.update({
-            where: {
-                attempt_id: attemptId,
-            },
-            data: {
-                submit_time: new Date(),
-                attempt_status: status,
-            },
-            omit: { total_score: true },
+            if (newAnswerIds.length) {
+                await tx.student_attempt_answers.createMany({
+                    data: newAnswerIds.map(id => ({
+                        attempt_id: attemptId,
+                        answer_id: id,
+                    })),
+                });
+            }
+
+            const result = await tx.student_attempts.updateMany({
+                where: {
+                    attempt_id: attemptId,
+                    attempt_status: AttemptStatus.INPROGRESS,
+                },
+                data: {
+                    submit_time: new Date(),
+                    attempt_status: status,
+                },
+            });
+
+            if (result.count === 0) {
+                throw new BadRequestException(
+                    '[vsi] Không thể nộp bài. Bài thi đã không còn ở trạng thái INPROGRESS.',
+                );
+            }
+
+            return await tx.student_attempts.findUnique({
+                where: { attempt_id: attemptId },
+                omit: { total_score: true },
+            });
         });
 
         await this.notiService.create(
@@ -279,7 +309,7 @@ export class AttemptService {
             [studentId],
         );
 
-        await this.grade(submited.attempt_id);
+        await this.grade(submited!.attempt_id);
 
         return submited;
     }
