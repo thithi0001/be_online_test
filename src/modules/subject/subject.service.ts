@@ -34,7 +34,10 @@ export class SubjectService {
                 sub_id: subjectId,
             },
             include: {
-                _count: { select: { question_banks: true,},},
+                _count: { select: { 
+                    question_banks: true,
+                    exam_templates: true,
+                },},
             },
         });
 
@@ -86,7 +89,10 @@ export class SubjectService {
                 take: limit,
                 orderBy: {sub_name: 'asc'},
                 include: {
-                    _count: { select: { question_banks: true,},},
+                    _count: { select: { 
+                        question_banks: true,
+                        exam_templates: true,
+                    },},
                 },
             }),
 
@@ -119,7 +125,10 @@ export class SubjectService {
                 sub_name: newSubjectName,
             },
             include: {
-                _count: { select: { question_banks: true,},},
+                _count: { select: { 
+                    question_banks: true,
+                    exam_templates: true,
+                },},
             },
         });
     }

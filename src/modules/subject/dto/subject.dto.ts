@@ -25,6 +25,10 @@ export class SubjectResponseDto {
     @Expose()
     @Transform(({obj}) => obj?._count?.question_banks ?? 0)
     numberOfQuestions?: number;
+    
+    @Expose()
+    @Transform(({obj}) => obj?._count?.exam_templates ?? 0)
+    numberOfTemplates?: number;
 }
 
 export class PaginatedSubjectDto 
