@@ -6,6 +6,7 @@ import 'reflect-metadata';
 import { SubjectController } from './modules/subject/subject.controller';
 
 async function bootstrap() {
+  
   const app = await NestFactory.create(AppModule);
   // app.use(helmet());
 
@@ -30,10 +31,11 @@ async function bootstrap() {
   await app.listen(process.env.PORT ?? 3000);
   console.log('it is running')
   console.log(process.env.DB_NAME)
+  console.log('JWT_SECRET:', process.env.JWT_SECRET);
 
 
 
-  console.log(app.getHttpAdapter().getInstance().constructor.name);
+  // console.log(app.getHttpAdapter().getInstance().constructor.name);
 }
 bootstrap();
 

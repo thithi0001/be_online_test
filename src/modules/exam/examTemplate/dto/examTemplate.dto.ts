@@ -4,12 +4,6 @@ import { ArrayNotEmpty, IsArray, IsInt, IsNotEmpty, IsNumber, IsString, Min, Val
 
 export class CreateExamTemplateDto {
     @IsInt()
-    templateId?: number;
-    
-    @IsInt()
-    teacherId: number;
-    
-    @IsInt()
     subjectId: number;
     
     @IsString()
@@ -27,9 +21,6 @@ export class UpdateExamTemplateDto
     extends PartialType(CreateExamTemplateDto) {}
 
 export class CreateTemplateQuestionDto {
-    @IsInt()
-    templateId?: number;
-    
     @IsInt()
     questionId: number;
     

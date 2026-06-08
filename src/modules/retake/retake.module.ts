@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common";
 import { SessionModule } from "../exam/examSession/examSession.module";
 import { AttemptModule } from "../attempt/attempt.module";
 import { RetakeController } from "./retake.controller";
+import { PermissionController } from "./permission.controller";
 import { RetakeService } from "./retake.service";
 import { NotificationModule } from "../notification/notification.module";
 
@@ -11,7 +12,7 @@ import { NotificationModule } from "../notification/notification.module";
         AttemptModule,
         NotificationModule,
     ],
-    controllers: [RetakeController],
+    controllers: [RetakeController, PermissionController],
     providers: [RetakeService],
     exports: [RetakeService],
 })

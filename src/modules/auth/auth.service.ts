@@ -30,6 +30,8 @@ export class AuthService {
          * reject if not verified
          */
 
+        console.log('[LOGIN] JWT_SECRET:', process.env.JWT_SECRET);
+        
         const user = await this.prisma.users.findUnique({
             where: {
                 email: dto.email,

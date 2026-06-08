@@ -5,9 +5,9 @@ import { RetakeService } from "./retake.service";
 import { Roles } from "@/common/decorators/roles.decorator";
 import { Role } from "@/common/enums/role.enum";
 import { Serialize } from "@/common/decorators/serialize.decorator";
-import { PaginatedPermissionDto, PaginatedRetakeDto, PermissionResponseDto, QueryPermissionDto, QueryRetakeDto, RetakeResponseDto } from "./dto/retake-response.dto";
+import { PaginatedRetakeDto, QueryRetakeDto, RetakeResponseDto } from "./dto/retake-response.dto";
 import { CurrentUser } from "@/common/decorators/current-user.decorator";
-import { CreatePermissionDto, CreateRetakeDto } from "./dto/retake.dto";
+import { CreateRetakeDto } from "./dto/retake.dto";
 
 @Controller('retakes')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -53,39 +53,6 @@ export class RetakeController {
     ) {
         return this.retakeService.rejectRetake(user.userId, id);
     }
-
-    @Post(':id/grant')
-    @Roles(Role.TEACHER)
-    @Serialize(PermissionResponseDto)
-    grantPermission(
-        @CurrentUser() user: any,
-        @Param('id', ParseIntPipe) id: number,
-        @Body() dto: CreatePermissionDto,
-    ) {
-        return this.retakeService.grantPermission(user.userId, id, dto);
-    }
-
-    @Get('/permissions')
-    @Roles(Role.TEACHER, Role.STUDENT)
-    @Serialize(PaginatedPermissionDto)
-    getManyPermission(
-        @CurrentUser() user: any,
-        @Query() query: QueryPermissionDto,
-    ) {
-        return this.retakeService.getManyPermission(user.userId, user.role, query);
-    }
-
-    @Get('/permissions/:id')
-    @Roles(Role.TEACHER, Role.STUDENT)
-    @Serialize(PermissionResponseDto)
-    getPermissionById(
-        @CurrentUser() user: any,
-        @Param('id', ParseIntPipe) id: number,
-    ) {
-        return this.retakeService.getPermissionById(user.userId, user.role, id);
-    }
-
-
 
 
 }

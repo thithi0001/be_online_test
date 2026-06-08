@@ -4,12 +4,6 @@ import { Expose, Transform, Type } from "class-transformer";
 import { IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, Min } from "class-validator";
 
 export class CreateSubjectDto {
-    @IsInt()
-    subjectId?: number;
-
-    @IsInt()
-    createdBy?: number;
-
     @IsString()
     @IsNotEmpty()
     subjectName: string;

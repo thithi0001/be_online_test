@@ -16,22 +16,22 @@ export class PrismaExceptionFilter implements ExceptionFilter {
             switch (exception.code) {
                 case 'P2002':
                     status = HttpStatus.CONFLICT;
-                    message = 'Dữ liệu đã tồn tại.';
+                    message = '[Prisma] Dữ liệu đã tồn tại.';
                     break;
 
                 case 'P2025':
                     status = HttpStatus.NOT_FOUND;
-                    message = 'Không tìm thấy dữ liệu.';
+                    message = '[Prisma] Không tìm thấy dữ liệu.';
                     break;
 
                 case 'P2003':
                     status = HttpStatus.BAD_REQUEST;
-                    message = 'Vi phạm khóa ngoại.';
+                    message = '[Prisma] Vi phạm khóa ngoại.';
                     break;        
 
                 case 'P2011':
                     status = HttpStatus.BAD_REQUEST;
-                    message = 'Dữ liệu không hợp lệ.';
+                    message = '[Prisma] Dữ liệu không hợp lệ.';
                     break;        
 
                 default:
@@ -42,7 +42,7 @@ export class PrismaExceptionFilter implements ExceptionFilter {
 
         if (exception instanceof Prisma.PrismaClientValidationError) {
             status = HttpStatus.BAD_REQUEST;
-            message = 'Dữ liệu không hợp lệ';
+            message = '[Prisma] Dữ liệu không hợp lệ.';
         }
 
         response.status(status).json({

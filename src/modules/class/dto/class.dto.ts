@@ -2,12 +2,6 @@ import { PartialType } from "@nestjs/swagger";
 import { ArrayNotEmpty, IsArray, IsEmail, IsInt, IsNotEmpty, IsString } from "class-validator";
 
 export class CreateClassDto {
-    @IsInt()
-    classId?: number;
-
-    @IsInt()
-    teacherId?: number;
-    
     @IsString()
     @IsNotEmpty()
     className: string;

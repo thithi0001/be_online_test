@@ -334,7 +334,7 @@ export class QuestionBankService {
             ...(difficulty && { difficulty: difficulty }),
             // ...(createdBy && { created_by: createdBy }),
             ...(qType && { q_type: qType }),
-            createdBy: teacherId,
+            created_by: teacherId,
             is_active: true,
         };
 

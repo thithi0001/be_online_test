@@ -229,6 +229,7 @@ export class ExamTemplateService {
                 q_type: true,
                 m_content: true,
                 is_active: true, // dùng kiểm tra tính hợp lệ
+                difficulty: true,
                 answer_banks: answerConfig,
             },
         }

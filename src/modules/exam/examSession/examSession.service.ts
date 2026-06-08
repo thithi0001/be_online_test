@@ -75,16 +75,13 @@ export class ExamSessionService {
             throw new ForbiddenException('Không có quyền tham gia hoặc kỳ thi không tồn tại.');
     }
 
-    private selectForStudent = {
-        session_id: true,
-        template_id: true,
-        session_name: true,
-        duration: true,
-        start_time: true,
-        end_time: true,
-        attempt_limit: true,
-        session_status: true,
-        created_by: true,
+    private omitForStudent = {
+        shuffle_questions: true as const,
+        shuffle_answers: true as const,
+        auto_submit: true as const,
+        allow_review: true as const,
+        show_result: true as const,
+        session_password: true as const,
     };
 
     async validateAndReturnForStudent(
@@ -98,7 +95,12 @@ export class ExamSessionService {
                     student_class: { some: { student_id: studentId },},},},
                 },
             },
-            select: this.selectForStudent,
+            omit: this.omitForStudent,
+            include: {
+                exam_session_class: {
+                    select: { classes: { omit: { teacher_id: true },},},
+                },
+            },
         });
 
         if (!existed)
@@ -344,16 +346,8 @@ export class ExamSessionService {
         } = query;
 
         let where = {};
-        const include = {
-            exam_session_class: {
-                select: { classes: { omit: { teacher_id: true } } },
-            },
-        };
 
-        const select = (role === Role.STUDENT) ? {
-            ...this.selectForStudent,
-            exam_session_class: include.exam_session_class,
-        } : undefined;
+        const isStudent = role === Role.STUDENT;
 
         switch(role) {
             case Role.TEACHER:
@@ -406,17 +400,20 @@ export class ExamSessionService {
         const [data, total] = await this.prisma.$transaction([
             this.prisma.exam_sessions.findMany({
                 where,
-                ...(select && { select }),
                 skip: (page - 1) * limit,
                 take: limit,
                 orderBy: [
                     { start_time: 'desc' },
                     { session_name: 'asc' },
                 ],
-                ...(select ? {} : {
-                    omit: { session_password: true },
-                    include,
+                ...(isStudent && {
+                    omit: this.omitForStudent,
                 }),
+                include: {
+                    exam_session_class: {
+                        select: { classes: { omit: { teacher_id: true } } },
+                    },
+                },
             }),
 
             this.prisma.exam_sessions.count({ where }),
