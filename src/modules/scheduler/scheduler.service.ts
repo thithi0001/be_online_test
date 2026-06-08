@@ -78,8 +78,6 @@ export class SchedulerService {
             await this.attemptService.submit(
                 attempt.student_id,
                 attempt.attempt_id,
-                [],
-                [],
                 AttemptStatus.TIMEOUT,
             );
         }

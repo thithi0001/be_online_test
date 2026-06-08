@@ -250,55 +250,32 @@ export class AttemptService {
     async submit(
         studentId: number,
         attemptId: number,
-        // danh sách đã được lọc chứa lựa chọn mới
-        newAnswerIds: number[],
-        // danh sách chứa lựa chọn đã bị loại bỏ
-        deleteAnswerIds: number[],
-        // nếu sv chủ động nộp bài -> SUBMITTED
-        // nếu hết giờ, hệ thống tự động nộp -> TIMEOUT
         status: AttemptStatus.SUBMITTED | AttemptStatus.TIMEOUT,
     ) {
-        await this.validateStudentOwnership(studentId, attemptId);
+        const attempt = await this.prisma.student_attempts.findUnique({
+            where: {
+                attempt_id: attemptId,
+            },
+        });
 
-        const submited = await this.prisma.$transaction(async tx => {
-            await tx.student_attempt_answers.deleteMany({
-                where: {
-                    attempt_id: attemptId,
-                    student_attempts: { attempt_status: AttemptStatus.INPROGRESS },
-                    answer_id: { in: deleteAnswerIds },
-                },
-            });
+        if (!attempt)
+            throw new NotFoundException('[s] Bài làm không tồn tại.');
 
-            if (newAnswerIds.length) {
-                await tx.student_attempt_answers.createMany({
-                    data: newAnswerIds.map(id => ({
-                        attempt_id: attemptId,
-                        answer_id: id,
-                    })),
-                });
-            }
+        if (attempt.student_id !== studentId)
+            throw new ForbiddenException('[s] Không có quyền nộp bài làm.');
 
-            const result = await tx.student_attempts.updateMany({
-                where: {
-                    attempt_id: attemptId,
-                    attempt_status: AttemptStatus.INPROGRESS,
-                },
-                data: {
-                    submit_time: new Date(),
-                    attempt_status: status,
-                },
-            });
+        if (attempt.attempt_status !== AttemptStatus.INPROGRESS)
+            throw new BadRequestException('[s] Bài làm đã được nộp.');
 
-            if (result.count === 0) {
-                throw new BadRequestException(
-                    '[vsi] Không thể nộp bài. Bài thi đã không còn ở trạng thái INPROGRESS.',
-                );
-            }
-
-            return await tx.student_attempts.findUnique({
-                where: { attempt_id: attemptId },
-                omit: { total_score: true },
-            });
+        const submited = await this.prisma.student_attempts.update({
+            where: {
+                attempt_id: attemptId,
+            },
+            data: {
+                attempt_status: status,
+                submit_time: new Date(),
+            },
+            omit: { total_score: true },
         });
 
         await this.notiService.create(
@@ -309,7 +286,7 @@ export class AttemptService {
             [studentId],
         );
 
-        await this.grade(submited!.attempt_id);
+        await this.grade(submited.attempt_id);
 
         return submited;
     }
