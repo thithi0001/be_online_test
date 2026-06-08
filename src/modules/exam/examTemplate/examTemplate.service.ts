@@ -253,10 +253,13 @@ export class ExamTemplateService {
                     template_id: templateId,
                 },
             }),
-        ]);            
+        ]);
 
         return {
-            data,
+            data: data.map(i => ({
+                ...i,
+                score: i.score?.toString(),
+            })),
             total
         };
     }

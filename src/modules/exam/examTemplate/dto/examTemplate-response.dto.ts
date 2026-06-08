@@ -4,6 +4,7 @@ import { Expose, Transform, Type } from "class-transformer";
 import { IsInt, IsOptional, IsString, Min } from "class-validator";
 import { AnswerResponseDto, QuestionResponseDto } from "../../questionBank/dto/question-response.dto";
 import { WithTotalResponseDto } from "@/common/dtos/with-total-response.dto";
+import { Decimal } from "@prisma/client/runtime/library";
 
 export class ExamTemplateResponseDto {
     @Expose({name: 'template_id'})
@@ -72,15 +73,22 @@ export class TemplateQuestionResponseDto {
     questionId: number;
     
     @Expose()
-    score: number;
+    score: string;
     
     @Expose({name: 'order_index'})
     orderIndex: number;
 
-    @Type(() => QuestionResponseDto)
     @Expose({name: 'question_banks'})
+    @Type(() => QuestionResponseDto)
     data: QuestionResponseDto;
 }
 
 export class TemplateQuestionArrayResponseDto 
-    extends WithTotalResponseDto<TemplateQuestionResponseDto> {}
+{
+    @Expose()
+    @Type(() => TemplateQuestionResponseDto)
+    data: TemplateQuestionResponseDto[];
+
+    @Expose()
+    total: number;
+}
