@@ -27,21 +27,14 @@
      - `@Body() body: any` (`newAnswerIds`, `deleteAnswerIds`, `status`)
    - Output: `AttemptResponseDto`
 
-4. `PATCH /attempts/:id/grade`
-   - Tên: `grade`
-   - Nhiệm vụ: Chấm attempt 
-   - Input:
-     - `@Param('id', ParseIntPipe) id: number`
-   - Output: `AttemptResponseDto`
-
-5. `GET /attempts/current`
+4. `GET /attempts/current`
    - Tên: `getCurrent`
    - Nhiệm vụ: Lấy attempt hiện tại của học sinh
    - Input:
      - `@CurrentUser() user`
    - Output: `AttemptWithAnswerResponseDto`
 
-6. `GET /attempts/:id`
+5. `GET /attempts/:id`
    - Tên: `getById`
    - Nhiệm vụ: Lấy attempt theo id
    - Input:
@@ -49,7 +42,7 @@
      - `@Param('id', ParseIntPipe) id: number`
    - Output: `AttemptWithAnswerResponseDto`
 
-7. `GET /attempts`
+6. `GET /attempts`
    - Tên: `getMany`
    - Nhiệm vụ: Lấy danh sách attempt
    - Input:
@@ -454,28 +447,13 @@
    - Input: `@Body() dto: CreateUserDto`
    - Output: `UserResponseDto`
 
-2. `GET /users/:id`
-   - Tên: `getById`
-   - Nhiệm vụ: Lấy thông tin người dùng theo id
-   - Input:
-     - `@Param('id', ParseIntPipe) id: number`
-   - Output: `UserResponseDto`
-
-3. `GET /users`
-   - Tên: `getAll`
-   - Nhiệm vụ: Lấy danh sách người dùng
-   - Input:
-     - `@Body() userIds: number[]`
-     - `@Query() query: QueryUserDto`
-   - Output: `PaginatedUserDto`
-
-4. `GET /users/me`
+2. `GET /users/me`
    - Tên: `getMyProfile`
    - Nhiệm vụ: Lấy thông tin profile của người dùng hiện tại
    - Input: `@CurrentUser() user`
    - Output: `UserResponseDto`
 
-5. `PATCH /users/me`
+3. `PATCH /users/me`
    - Tên: `update`
    - Nhiệm vụ: Cập nhật profile người dùng hiện tại
    - Input:
@@ -483,7 +461,22 @@
      - `@Body() dto: UpdateUserDto`
    - Output: `UserResponseDto`
 
-6. `PATCH /users/password`
+4. `GET /users/:id`
+   - Tên: `getById`
+   - Nhiệm vụ: Lấy thông tin người dùng theo id
+   - Input:
+     - `@Param('id', ParseIntPipe) id: number`
+   - Output: `UserResponseDto`
+
+5. `GET /users`
+   - Tên: `getAll`
+   - Nhiệm vụ: Lấy danh sách người dùng
+   - Input:
+     - `@Body() userIds: number[]`
+     - `@Query() query: QueryUserDto`
+   - Output: `PaginatedUserDto`
+
+6. `PATCH /users/change-password`
    - Tên: `changePassword`
    - Nhiệm vụ: Đổi mật khẩu người dùng
    - Input:

@@ -25,6 +25,23 @@ export class UserController {
     ) {
         return this.userService.create(dto);
     }
+
+    @Get('me')
+    @Serialize(UserResponseDto)
+    getMyProfile(
+        @CurrentUser() user: any
+    ) {
+        return this.userService.getById(user.userId);
+    }
+    
+    @Patch('me')
+    @Serialize(UserResponseDto)
+    update(
+        @CurrentUser() user: any,
+        @Body() dto: UpdateUserDto
+    ) {
+        return this.userService.update(user.userId, dto);
+    }
     
     @Get(':id')
     @Roles(Role.ADMIN, Role.TEACHER)
@@ -43,25 +60,8 @@ export class UserController {
     ) {
         return this.userService.getMany(userIds, query);
     }
-            
-    @Get('me')
-    @Serialize(UserResponseDto)
-    getMyProfile(
-        @CurrentUser() user: any
-    ) {
-        return this.userService.getById(user.userId);
-    }
 
-    @Patch('me')
-    @Serialize(UserResponseDto)
-    update(
-        @CurrentUser() user: any,
-        @Body() dto: UpdateUserDto
-    ) {
-        return this.userService.update(user.userId, dto);
-    }
-
-    @Patch('password')
+    @Patch('change-password')
     changePassword(
         @CurrentUser() user: any,
         @Body() dto: ChangePasswordDto,

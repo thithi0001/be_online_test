@@ -56,14 +56,6 @@ export class AttemptController {
         );
     }
 
-    @Patch(':id/grade')
-    @Serialize(AttemptResponseDto)
-    grade(
-        @Param('id', ParseIntPipe) id: number,
-    ) {
-        return this.attemptService.grade(id);
-    }
-
     @Get('current')
     @Roles(Role.STUDENT)
     @Serialize(AttemptWithAnswerResponseDto)
