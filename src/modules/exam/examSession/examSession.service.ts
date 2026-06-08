@@ -30,7 +30,7 @@ export class ExamSessionService {
         });
 
         if (!existed)
-            throw new ForbiddenException('Không có quyền quản lý hoặc kỳ thi không tồn tại.');
+            throw new ForbiddenException('[vto] Không có quyền quản lý hoặc kỳ thi không tồn tại.');
     }
 
     async validateAndReturnForTeacher(
@@ -50,7 +50,7 @@ export class ExamSessionService {
         });
 
         if (!existed)
-            throw new ForbiddenException('Không có quyền quản lý hoặc kỳ thi không tồn tại.');
+            throw new ForbiddenException('[varft] Không có quyền quản lý hoặc kỳ thi không tồn tại.');
 
         return existed;
     }
@@ -72,7 +72,7 @@ export class ExamSessionService {
         });
 
         if (!existed)
-            throw new ForbiddenException('Không có quyền tham gia hoặc kỳ thi không tồn tại.');
+            throw new ForbiddenException('[vso] Không có quyền tham gia hoặc kỳ thi không tồn tại.');
     }
 
     private omitForStudent = {
@@ -104,7 +104,7 @@ export class ExamSessionService {
         });
 
         if (!existed)
-            throw new ForbiddenException('Không có quyền tham gia kỳ thi.');
+            throw new ForbiddenException('[varfs] Không có quyền tham gia kỳ thi.');
     
         return existed;
     }
@@ -119,7 +119,7 @@ export class ExamSessionService {
             now > session.end_time.getTime()
         ) {
             throw new BadRequestException(
-                'Ngoài thời gian cho phép làm bài.',
+                '[vst] Ngoài thời gian cho phép làm bài.',
             );
         }
     }
@@ -142,7 +142,7 @@ export class ExamSessionService {
             sessionPassword !== session?.session_password
         ) {
             throw new BadRequestException(
-                'Mật khẩu không đúng.',
+                '[vsp] Mật khẩu không đúng.',
             );
         }
     }
@@ -218,14 +218,14 @@ export class ExamSessionService {
         const session = await this.validateAndReturnForTeacher(teacherId, sessionId);
         // không cho phép sửa khi không còn là nháp nữa
         if (session.session_status !== SessionStatus.DRAFT)
-            throw new BadRequestException('Không được phép chỉnh sửa kỳ thi đã công bố.');
+            throw new BadRequestException('[u] Không được phép chỉnh sửa kỳ thi đã công bố.');
         
         // không cho phép dùng đề thi không hợp lệ
         if (!dto.templateId)
             await this.examTemplateService.validateTemplate(Number(dto.templateId));
 
         if (!dto.classIds)
-            throw new BadRequestException('Chưa chọn lớp cho kỳ thi.');
+            throw new BadRequestException('[u] Chưa chọn lớp cho kỳ thi.');
 
         const updated = await this.prisma.exam_sessions.update({
             where: {
@@ -291,7 +291,7 @@ export class ExamSessionService {
         const session = await this.validateAndReturnForTeacher(teacherId, sessionId);
         // không cho phép xóa khi không còn là nháp nữa
         if (session.session_status !== 'draft')
-            throw new BadRequestException('Không được phép chỉnh sửa kỳ thi đã công bố.');
+            throw new BadRequestException('[d] Không được phép chỉnh sửa kỳ thi đã công bố.');
 
         await this.prisma.$transaction([
             this.prisma.exam_session_class.deleteMany({

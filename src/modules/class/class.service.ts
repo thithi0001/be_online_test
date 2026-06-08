@@ -37,7 +37,7 @@ export class ClassService {
         });
 
         if (!existed)
-            throw new ForbiddenException('Không có quyền quản lý hoặc lớp học không tồn tại.');
+            throw new ForbiddenException('[vto] Không có quyền quản lý hoặc lớp học không tồn tại.');
     }
 
     async validateAndReturnForTeacher(
@@ -55,7 +55,7 @@ export class ClassService {
         });
 
         if (!existed)
-            throw new ForbiddenException('Không có quyền quản lý hoặc lớp học không tồn tại.');
+            throw new ForbiddenException('[varft] Không có quyền quản lý hoặc lớp học không tồn tại.');
 
         return existed;
     }
@@ -75,7 +75,7 @@ export class ClassService {
         });
 
         if (!existed)
-            throw new ForbiddenException('Không có quyền tham gia hoặc lớp học không tồn tại.');
+            throw new ForbiddenException('[vso] Không có quyền tham gia hoặc lớp học không tồn tại.');
     }
 
     async validateAndReturnForStudent(
@@ -93,7 +93,7 @@ export class ClassService {
         });
 
         if (!existed)
-            throw new ForbiddenException('Không có quyền tham gia hoặc lớp học không tồn tại.');
+            throw new ForbiddenException('[varfs] Không có quyền tham gia hoặc lớp học không tồn tại.');
 
         return existed;
     }
@@ -163,7 +163,7 @@ export class ClassService {
             
         // không phải tài khoản student
         if (student.role !== Role.STUDENT) 
-            throw new BadRequestException('Người dùng không phải sinh viên.');
+            throw new BadRequestException('[aos] Người dùng không phải sinh viên.');
             
         const data = await this.prisma.student_class.create({
             data: {
@@ -314,10 +314,10 @@ export class ClassService {
     ) {
         switch (role) {
             case Role.TEACHER:
-                await this.validateAndReturnForTeacher(userId, classId);
+                return await this.validateAndReturnForTeacher(userId, classId);
 
             case Role.STUDENT:
-                await this.validateAndReturnForStudent(userId, classId);
+                return await this.validateAndReturnForStudent(userId, classId);
 
             default:
                 return await this.prisma.classes.findUnique({

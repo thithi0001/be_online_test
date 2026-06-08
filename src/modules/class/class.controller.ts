@@ -34,6 +34,8 @@ export class ClassController {
         @CurrentUser() user: any,
         @Query() query: QueryClassDto,
     ) {
+        console.log(user);
+
         return this.classService.getMany(user.userId, user.role, query);
     }
 
@@ -44,6 +46,8 @@ export class ClassController {
         @CurrentUser() user: any,
         @Param('id', ParseIntPipe) id: number,
     ) {
+        console.log(user);
+        console.log(id);
         return this.classService.getById(user.userId, user.role, id);
     }
 
@@ -56,7 +60,7 @@ export class ClassController {
         @Body() body: any
     ) {
         if (!body.newClassName) {
-            throw new BadRequestException('Tên lớp không được để trống.');
+            throw new BadRequestException('[cu] Tên lớp không được để trống.');
         }
 
         return this.classService.update(user.userId, id, body.newClassName);

@@ -21,7 +21,7 @@ export class SubjectController {
         @Body() body: any,
     ) {
         if (!body.subjectName) {
-            throw new BadRequestException('Tên môn học không được để trống.');
+            throw new BadRequestException('[cc] Tên môn học không được để trống.');
         }
 
         return this.subjectService.create(user.userId, body.subjectName);
@@ -56,7 +56,7 @@ export class SubjectController {
         @Body() body: any,
     ) {
         if (!body.newSubjectName) {
-            throw new BadRequestException('Tên môn học không được để trống.');
+            throw new BadRequestException('[cu] Tên môn học không được để trống.');
         }
 
         return this.subjectService.update(user.userId, id, body.newSubjectName);

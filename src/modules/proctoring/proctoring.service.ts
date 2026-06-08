@@ -26,7 +26,7 @@ export class ProctoringService {
         });
 
         if (!existed)
-            throw new BadRequestException('Không có quyền xem hoặc sự kiện không tồn tại.');
+            throw new BadRequestException('vto] Không có quyền xem hoặc sự kiện không tồn tại.');
     }
     
     async validateAndReturn(
@@ -50,7 +50,7 @@ export class ProctoringService {
         });
 
         if (!existed)
-            throw new BadRequestException('Không có quyền xem hoặc sự kiện không tồn tại.');
+            throw new BadRequestException('[var] Không có quyền xem hoặc sự kiện không tồn tại.');
 
         return existed;
     }

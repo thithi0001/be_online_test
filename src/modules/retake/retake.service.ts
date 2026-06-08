@@ -38,7 +38,7 @@ export class RetakeService {
                 });
         
                 if (!request)
-                    throw new BadRequestException('Không có quyền xem hoặc yêu cầu không tồn tại.');
+                    throw new BadRequestException('[vtor] Không có quyền xem hoặc yêu cầu không tồn tại.');
                 break;
 
             case "permission":
@@ -57,7 +57,7 @@ export class RetakeService {
                 });
         
                 if (!permission)
-                    throw new BadRequestException('Không có quyền xem hoặc yêu cầu không tồn tại.');
+                    throw new BadRequestException('[vtop] Không có quyền xem hoặc yêu cầu không tồn tại.');
                 break;
         }
     }
@@ -88,7 +88,7 @@ export class RetakeService {
             });
     
             if (!request)
-                throw new BadRequestException('Không có quyền xem hoặc yêu cầu không tồn tại.');
+                throw new BadRequestException('[varftr] Không có quyền xem hoặc yêu cầu không tồn tại.');
             
             return request;
         } else {   
@@ -104,7 +104,7 @@ export class RetakeService {
             });
             
             if (!permission)
-                throw new BadRequestException('Không có quyền xem hoặc yêu cầu không tồn tại.');
+                throw new BadRequestException('[varftp] Không có quyền xem hoặc yêu cầu không tồn tại.');
 
             return permission;
         }
@@ -128,7 +128,7 @@ export class RetakeService {
                 });
         
                 if (!request)
-                    throw new BadRequestException('Không có quyền xem hoặc yêu cầu không tồn tại.');
+                    throw new BadRequestException('[vsor] Không có quyền xem hoặc yêu cầu không tồn tại.');
                 break;
 
             case "permission":
@@ -145,7 +145,7 @@ export class RetakeService {
                 });
         
                 if (!permission)
-                    throw new BadRequestException('Không có quyền xem hoặc yêu cầu không tồn tại.');
+                    throw new BadRequestException('[vsop] Không có quyền xem hoặc yêu cầu không tồn tại.');
                 break;
         }
     }
@@ -174,7 +174,7 @@ export class RetakeService {
             });
             
             if (!request)
-                throw new BadRequestException('Không có quyền xem hoặc yêu cầu không tồn tại.');
+                throw new BadRequestException('[varfsr] Không có quyền xem hoặc yêu cầu không tồn tại.');
             
             return request;
         } else {   
@@ -188,7 +188,7 @@ export class RetakeService {
             });
             
             if (!permission)
-                throw new BadRequestException('Không có quyền xem hoặc yêu cầu không tồn tại.');
+                throw new BadRequestException('[varfsp] Không có quyền xem hoặc yêu cầu không tồn tại.');
             
             return permission;
         }
@@ -205,7 +205,7 @@ export class RetakeService {
         const { reachedLimit } = await this.attemptService.validateAttemptLimit(studentId, dto.sessionId, session);
         if (!reachedLimit)
             throw new BadRequestException(
-                'Chưa đạt giới hạn cho phép làm bài.',
+                '[c] Chưa đạt giới hạn cho phép làm bài.',
             );
 
         const { users, ...retake } = await this.prisma.retake_requests.create({
@@ -356,7 +356,7 @@ export class RetakeService {
 
         await this.notiService.create(
             {
-                content: `Yêu cầu thi lại trong kỳ thi ${session.session_name} đã bị từ chối.`,
+                content: `[rr] Yêu cầu thi lại trong kỳ thi ${session.session_name} đã bị từ chối.`,
                 createdBy: teacherId,
             },
             [updated.student_id],
@@ -383,7 +383,7 @@ export class RetakeService {
         });
 
         if (!session)
-            throw new BadRequestException('Kỳ thi không tồn tại.');
+            throw new BadRequestException('[gp] Kỳ thi không tồn tại.');
 
         await this.update(teacherId, requestId, RetakeStatus.GRANTED);
 

@@ -24,7 +24,7 @@ export class ExamTemplateService {
         });
 
         if (!existed)
-            throw new ForbiddenException('Không có quyền quản lý hoặc đề thi không tồn tại.');
+            throw new ForbiddenException('[vto] Không có quyền quản lý hoặc đề thi không tồn tại.');
     }
 
     async validateAndReturnForTeacher(
@@ -42,7 +42,7 @@ export class ExamTemplateService {
         });
 
         if (!existed)
-            throw new ForbiddenException('Không có quyền quản lý hoặc đề thi không tồn tại.');
+            throw new ForbiddenException('[varft] Không có quyền quản lý hoặc đề thi không tồn tại.');
 
         return existed;
     }
@@ -66,7 +66,7 @@ export class ExamTemplateService {
         });
 
         if (!existed)
-            throw new ForbiddenException('Không có quyền xem hoặc đề thi không tồn tại.');
+            throw new ForbiddenException('[varfs] Không có quyền xem hoặc đề thi không tồn tại.');
 
         return existed;
     }
@@ -84,7 +84,7 @@ export class ExamTemplateService {
         });
 
         if (count > 0)
-            throw new BadRequestException('Đề thi không hợp lệ.');
+            throw new BadRequestException('[vt] Đề thi không hợp lệ.');
     }
 
     async validateTemplateQuestions(
@@ -101,7 +101,7 @@ export class ExamTemplateService {
         });
 
         if (count > 0)
-            throw new BadRequestException('Đề thi chứa câu hỏi không hợp lệ.');
+            throw new BadRequestException('[vtq] Đề thi chứa câu hỏi không hợp lệ.');
     }
 
     async isUsed(
@@ -125,7 +125,7 @@ export class ExamTemplateService {
     ) {
         // không cho phép tạo đề nếu không có câu hỏi
         if (!dto.questions || dto.questions.length < 1)
-            throw new BadRequestException('Đề thi cần phải chứa câu hỏi.');
+            throw new BadRequestException('[c] Đề thi cần phải chứa câu hỏi.');
         
         // không cho phép tạo đề nếu chứa câu hỏi không hợp lệ
         const ids = dto.questions.map((q) => q.questionId);
@@ -153,7 +153,7 @@ export class ExamTemplateService {
 
         // nếu đề thi đã được sử dụng thì không cho phép sửa đề cũ
         if (await this.isUsed(templateId))
-            throw new BadRequestException('Không được phép chỉnh sửa đề thi.');
+            throw new BadRequestException('[c] Không được phép chỉnh sửa đề thi.');
 
         await this.updateQuestions(templateId, dto.questions);
 

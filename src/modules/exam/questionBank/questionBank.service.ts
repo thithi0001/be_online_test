@@ -25,7 +25,7 @@ export class QuestionBankService {
         });
 
         if (!existed)
-            throw new ForbiddenException('Không có quyền quản lý hoặc câu hỏi không tồn tại.');
+            throw new ForbiddenException('[vto] Không có quyền quản lý hoặc câu hỏi không tồn tại.');
     }
 
     private omit = {
@@ -61,7 +61,7 @@ export class QuestionBankService {
         });
 
         if (!existed)
-            throw new ForbiddenException('Không có quyền quản lý hoặc câu hỏi không tồn tại.');
+            throw new ForbiddenException('[var] Không có quyền quản lý hoặc câu hỏi không tồn tại.');
 
         return existed;
     }
@@ -75,16 +75,16 @@ export class QuestionBankService {
         ).length;
 
         if (correctCount === 0)
-            throw new BadRequestException('Câu hỏi phải có đáp án đúng.');
+            throw new BadRequestException('[vq] Câu hỏi phải có đáp án đúng.');
 
         if (answers.length < 2)
-            throw new BadRequestException('Câu hỏi phải có từ 2 đáp án.')
+            throw new BadRequestException('[vq] Câu hỏi phải có từ 2 đáp án.')
 
         switch (qType) {
             case QuestionType.SINGLE:
             case QuestionType.TF:
                 if (correctCount !== 1)
-                    throw new BadRequestException('Câu hỏi chỉ được phép có 1 đáp án đúng.');
+                    throw new BadRequestException('[vq] Câu hỏi chỉ được phép có 1 đáp án đúng.');
                 break;
 
             case QuestionType.MULTIPLE:
@@ -174,7 +174,7 @@ export class QuestionBankService {
         dto: UpdateQuestionBankDto,
     ) {
         if (await this.isUsed(questionId))
-            throw new BadRequestException('Không được phép chỉnh sửa câu hỏi.');
+            throw new BadRequestException('[u] Không được phép chỉnh sửa câu hỏi.');
 
         const question = await this.validateAndReturn(teacherId, questionId);
         const qType : QuestionType = dto.qType ?? (question.q_type as QuestionType);

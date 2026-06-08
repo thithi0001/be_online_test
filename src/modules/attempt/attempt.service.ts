@@ -41,7 +41,7 @@ export class AttemptService {
         });
 
         if (!existed)
-            throw new ForbiddenException('Không được phép xem hoặc bài làm không tồn tại.');
+            throw new ForbiddenException('[vto] Không được phép xem hoặc bài làm không tồn tại.');
     }
     
     async validateStudentOwnership(
@@ -59,7 +59,7 @@ export class AttemptService {
         });
 
         if (!existed)
-            throw new ForbiddenException('Không được phép xem hoặc bài làm không tồn tại.');
+            throw new ForbiddenException('[vso] Không được phép xem hoặc bài làm không tồn tại.');
     }
 
     async validateAttemptEligibility(
@@ -93,7 +93,7 @@ export class AttemptService {
 
         if (reachedLimit)
             throw new BadRequestException(
-                'Đã đạt giới hạn cho phép làm bài.',
+                '[vae] Đã đạt giới hạn cho phép làm bài.',
             );
 
         // 5. sv đang không có tham gia làm bài thi nào
@@ -119,7 +119,7 @@ export class AttemptService {
             now > retake.available_to.getTime()
         ) {
             throw new BadRequestException(
-                'Ngoài thời gian cho phép làm bài.',
+                '[virt] Ngoài thời gian cho phép làm bài.',
             );
         }
     }
@@ -173,7 +173,7 @@ export class AttemptService {
 
         if (attempting) {
             throw new BadRequestException(
-                'Không được phép tham gia nhiều bài thi cùng lúc.',
+                '[vnaa] Không được phép tham gia nhiều bài thi cùng lúc.',
             );
         }
     }
@@ -461,7 +461,7 @@ export class AttemptService {
         });
 
         if (!data)
-            throw new NotFoundException('Không tìm thấy bài làm.');
+            throw new NotFoundException('[gbid] Không tìm thấy bài làm.');
         
         switch (role) {
             case Role.ADMIN:
@@ -469,12 +469,12 @@ export class AttemptService {
 
             case Role.TEACHER:                
                 if (userId !== data.exam_sessions.created_by)
-                    throw new ForbiddenException('Không được phép xem hoặc bài làm không tồn tại.');
+                    throw new ForbiddenException('[gbid] Không được phép xem hoặc bài làm không tồn tại.');
                 break;
                 
             case Role.STUDENT:
                 if (userId !== data.student_id)
-                    throw new ForbiddenException('Không được phép xem hoặc bài làm không tồn tại.');
+                    throw new ForbiddenException('[gbid] Không được phép xem hoặc bài làm không tồn tại.');
                 break;
 
             default:
@@ -491,7 +491,7 @@ export class AttemptService {
             ) && !data.exam_sessions.allow_review;
         
         if (denyReview)
-            throw new BadRequestException('không cho phép xem bài làm.');
+            throw new BadRequestException('[gbid] Không cho phép xem bài làm.');
 
         /**
          * ẩn điểm đối với sv 

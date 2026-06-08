@@ -19,7 +19,7 @@ export class NotificationService {
         });
 
         if (!existed)
-            throw new NotFoundException('Không tìm thấy thông báo.');
+            throw new NotFoundException('[vuo] Không tìm thấy thông báo.');
     }
 
     async validateAndReturn(
@@ -37,7 +37,7 @@ export class NotificationService {
         });
 
         if (!existed)
-            throw new NotFoundException('Không tìm thấy thông báo.');
+            throw new NotFoundException('[var] Không tìm thấy thông báo.');
 
         return existed;
     }

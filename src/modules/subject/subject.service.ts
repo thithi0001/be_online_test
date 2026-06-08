@@ -21,7 +21,7 @@ export class SubjectService {
         });
 
         if (!existed)
-            throw new ForbiddenException('Không có quyền quản lý hoặc môn học không tồn tại.');
+            throw new ForbiddenException('[vto] Không có quyền quản lý hoặc môn học không tồn tại.');
     }
     
     async validateAndReturn(
@@ -42,7 +42,7 @@ export class SubjectService {
         });
 
         if (!existed)
-            throw new ForbiddenException('Không có quyền quản lý hoặc môn học không tồn tại.');
+            throw new ForbiddenException('[var] Không có quyền quản lý hoặc môn học không tồn tại.');
 
         return existed;
     }
