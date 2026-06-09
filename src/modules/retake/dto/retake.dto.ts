@@ -10,9 +10,6 @@ export class CreateRetakeDto {
 }
 
 export class CreatePermissionDto {
-    @IsInt()
-    requestId: number;
-    
     @IsDate()
     availableFrom: Date;
     
